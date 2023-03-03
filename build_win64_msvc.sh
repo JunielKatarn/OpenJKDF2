@@ -5,8 +5,8 @@
 export OPENJKDF2_RELEASE_COMMIT=$(git log -1 --format="%H")
 export OPENJKDF2_RELEASE_COMMIT_SHORT=$(git rev-parse --short=8 HEAD)
 
-#rm -rf build_win64
-mkdir -p build_win64 && cd build_win64
+#rm -rf build_win64_vc
+mkdir -p build_win64_vc && cd build_win64_vc
 
 if [ ! -f build_protoc/protoc ]; then
     mkdir -p build_protoc && cd build_protoc
