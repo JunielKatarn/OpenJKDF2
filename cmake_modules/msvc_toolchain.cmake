@@ -18,7 +18,7 @@ set(WIN32 TRUE)
 
 set(PLAT_MSVC TRUE CACHE BOOL "MSVC x64 target")
 
-include("${CMAKE_SOURCE_DIR}/cmake_modules_windows/Windows.MSVC.toolchain.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/../cmake_modules_windows/Windows.MSVC.toolchain.cmake")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
 
