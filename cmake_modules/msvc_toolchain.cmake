@@ -1,0 +1,34 @@
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_VERSION 1)
+set(CMAKE_SYSTEM_PROCESSOR x64)
+#set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+#set(Threads_FOUND TRUE)
+#set(CMAKE_THREAD_LIBS_INIT "-pthread")
+#set(CMAKE_USE_PTHREADS_INIT 1)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(WIN32 TRUE)
+
+set(PLAT_MSVC TRUE CACHE BOOL "MSVC x64 target")
+
+include("${CMAKE_SOURCE_DIR}/cmake_modules_windows/Windows.MSVC.toolchain.cmake")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
+
+set(OPENAL_LIBRARY "${PROJECT_SOURCE_DIR}/3rdparty/openal-soft/bin/Win64/soft_oal.dll")
+set(OPENAL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/3rdparty/openal-soft/include/AL")
+
+#set(SDL2_LIBRARIES "${PROJECT_SOURCE_DIR}/3rdparty/SDL2/x86_64-w64-mingw32/lib/libSDL2.la ${PROJECT_SOURCE_DIR}/3rdparty/SDL2/x86_64-w64-mingw32/lib/libSDL2main.la")
+#set(SDL2_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/3rdparty/SDL2/x86_64-w64-mingw32/include")
+
+#set(SDL2_DIR "${CMAKE_SOURCE_DIR}/3rdparty/SDL2/x86_64-w64-mingw32/lib/cmake/SDL2")
+#find_package(SDL2 REQUIRED)
+
+message( STATUS "MSVC x64 toolchain invoked" )
