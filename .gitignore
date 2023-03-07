@@ -106,3 +106,4 @@ flatpak_openjkdf2/*
 OpenJKDF2.flatpak
 org.openjkdf2.OpenJKDF2.yml
 /.vs/VSWorkspaceState.json
+/.vscode/settings.json
