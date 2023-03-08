@@ -153,7 +153,7 @@ elseif(PLAT_MACOS)
     set(TARGET_CAN_JKGM TRUE)
 
     set(BUNDLE "${PROJECT_SOURCE_DIR}/OpenJKDF2.app")
-    set(HOMEBREW_PREFIX $ENV{HOMEBREW_PREFIX})
+    set(HOMEBREW_PREFIX "/usr/local")
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")

@@ -51,7 +51,7 @@ if [ ! -f build_physfs/libphysfs.a ]; then
 fi
 
 export PKG_CONFIG_PATH_OLD=$PKG_CONFIG_PATH
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_OLD:/opt/homebrew/opt/openssl@1.1/lib/pkgconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH_OLD:/usr/local/opt/openssl@1.1/lib/pkgconfig
 DEBUG_QOL_CHEATS=1 OPENJKDF2_NO_ASAN=0 cmake .. &&
 DEBUG_QOL_CHEATS=1 OPENJKDF2_NO_ASAN=0 make -j10 &&
 cd .. &&
@@ -68,4 +68,4 @@ LSAN_OPTIONS="suppressions=/Users/$USER/workspace/OpenJKDF2/suppr.txt" ASAN_OPTI
 #open OpenJKDF2.app
 
 
-#LSAN_OPTIONS="suppressions=/Users/$USER/workspace/OpenJKDF2/suppr.txt" ASAN_OPTIONS="detect_leaks=1:log_path=/Users/$USER/workspace/OpenJKDF2/asan.log" ./OpenJKDF2.app/Contents/MacOS/openjkdf2-64 
+#LSAN_OPTIONS="suppressions=/Users/$USER/workspace/OpenJKDF2/suppr.txt" ASAN_OPTIONS="detect_leaks=1:log_path=/Users/$USER/workspace/OpenJKDF2/asan.log" ./OpenJKDF2.app/Contents/MacOS/openjkdf2-64
