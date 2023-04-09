@@ -37,29 +37,29 @@ int jkGuiSingleTally_Show()
     int ret; // eax
     wchar_t v14[32]; // [esp+8h] [ebp-40h] BYREF
 
-    jkGui_SetModeMenu(jkGui_stdBitmaps[10]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]->palette);
     jkGuiRend_MenuSetReturnKeyShortcutElement(&jkGuiSingleTally_menu, &jkGuiSingleTally_buttons[6]);
     jkGuiRend_MenuSetEscapeKeyShortcutElement(&jkGuiSingleTally_menu, &jkGuiSingleTally_buttons[5]);
     jkGuiSingleTally_buttons[0].wstr = jkPlayer_playerShortName;
     stdString_snprintf(std_genBuffer, 1024, "RANK_%d_%c", jkPlayer_GetJediRank(), (jkPlayer_CalcAlignment(0) >= 0.0) ? 'L' : 'D');
-    jkGuiSingleTally_buttons[1].wstr = jkStrings_GetText(std_genBuffer);
+    jkGuiSingleTally_buttons[1].wstr = jkStrings_GetUniStringWithFallback(std_genBuffer);
     if ( (int)sithPlayer_GetBinAmt(SITHBIN_MAXSECRETS) <= 0 )
     {
-        jk_snwprintf(v14, 0x20u, L"%ls %ls", jkStrings_GetText("GUI_SECRETS_FOUND"), jkStrings_GetText("GUI_NO_SECRETS"));
+        jk_snwprintf(v14, 0x20u, L"%ls %ls", jkStrings_GetUniStringWithFallback("GUI_SECRETS_FOUND"), jkStrings_GetUniStringWithFallback("GUI_NO_SECRETS"));
     }
     else
     {
-        jk_snwprintf(v14, 0x20u, L"%ls %d/%d", jkStrings_GetText("GUI_SECRETS_FOUND"), (int)sithPlayer_GetBinAmt(SITHBIN_SECRETS), (int)sithPlayer_GetBinAmt(SITHBIN_MAXSECRETS));
+        jk_snwprintf(v14, 0x20u, L"%ls %d/%d", jkStrings_GetUniStringWithFallback("GUI_SECRETS_FOUND"), (int)sithPlayer_GetBinAmt(SITHBIN_SECRETS), (int)sithPlayer_GetBinAmt(SITHBIN_MAXSECRETS));
     }
     jkGuiSingleTally_buttons[2].wstr = v14;
-    jkGuiSingleTally_buttons[3].wstr = jkStrings_GetText("GUI_STARS_EARNED");
+    jkGuiSingleTally_buttons[3].wstr = jkStrings_GetUniStringWithFallback("GUI_STARS_EARNED");
     do
     {
         v7 = 1;
         ret = jkGuiRend_DisplayAndReturnClicked(&jkGuiSingleTally_menu);
         if ( ret == -1 )
         {
-            if ( !jkGuiDialog_YesNoDialog(jkStrings_GetText("GUI_ABORT_GAME"), jkStrings_GetText("GUI_CONFIRM_ABORTCD")) )
+            if ( !jkGuiDialog_YesNoDialog(jkStrings_GetUniStringWithFallback("GUI_ABORT_GAME"), jkStrings_GetUniStringWithFallback("GUI_CONFIRM_ABORTCD")) )
                 continue;
         }
         else if ( ret != 1 )
@@ -82,7 +82,7 @@ void jkGuiSingleTally_Startup()
         jkGuiSingleTally_foStars = stdBitmap_Load("ui\\bm\\foStars.bm", 1, 0);
     }
     
-    jkGui_InitMenu(&jkGuiSingleTally_menu, jkGui_stdBitmaps[10]);
+    jkGui_InitMenu(&jkGuiSingleTally_menu, jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]);
 }
 
 void jkGuiSingleTally_Shutdown()

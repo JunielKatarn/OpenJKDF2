@@ -168,18 +168,22 @@ int openjkdf2_bIsKVM = 1;
 int openjkdf2_restartMode = OPENJKDF2_RESTART_NONE;
 char openjkdf2_aOrigCwd[1024];
 char openjkdf2_aRestartPath[256];
+char* openjkdf2_pExecutablePath = "";
 
 void do_hooks();
 
 #ifdef WIN64_STANDALONE
 #include "exchndl.h"
 
-#include <Windows.h>
+#include <windows.h>
+#endif
+
+#ifdef PLATFORM_PHYSFS
+#include <physfs.h>
 #endif
 
 #ifdef LINUX
 #ifndef ARCH_WASM
-static char* executable_path;
 void crash_handler_basic(int sig);
 
 #include <sys/mman.h>
@@ -194,9 +198,7 @@ void crash_handler_basic(int sig);
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#ifdef SDL2_RENDER
-#include <SDL2/SDL.h>
-#endif // SDL2_RENDER
+#include "SDL2_helper.h"
 
 #endif // LINUX
 
@@ -232,15 +234,19 @@ int main(int argc, char** argv)
     }
 #endif // WIN64_STANDALONE
 
+#if !defined(ARCH_WASM) && !defined(TARGET_ANDROID)
+    openjkdf2_pExecutablePath = argv[0];
+#endif // !ARCH_WASM
+
 #ifdef LINUX
-#ifndef ARCH_WASM
-    executable_path = argv[0];
+
+#if !defined(ARCH_WASM) && !defined(TARGET_ANDROID)
     signal(SIGSEGV, crash_handler_basic);
     //signal(SIGINT, int_handler);
 #endif // !ARCH_WASM
 
 #ifndef ARCH_64BIT
-#ifndef ARCH_WASM
+#if !defined(ARCH_WASM) && !defined(TARGET_ANDROID)
     mmap((void*)0x400000, 0x122000, PROT_READ | PROT_WRITE, MAP_ANON|MAP_PRIVATE|MAP_FIXED, -1, 0);
     mmap((void*)0x522000, 0x500000, PROT_READ | PROT_WRITE, MAP_ANON|MAP_PRIVATE|MAP_FIXED, -1, 0);
     
@@ -284,6 +290,11 @@ int main(int argc, char** argv)
 #endif // !ARCH_WASM
 #endif // !ARCH_64BIT
 #endif // LINUX
+
+#ifdef PLATFORM_PHYSFS
+    PHYSFS_init(argv[0]);
+    PHYSFS_permitSymbolicLinks(0);
+#endif
 
     getcwd(openjkdf2_aOrigCwd, sizeof(openjkdf2_aOrigCwd));
 
@@ -356,6 +367,11 @@ int main(int argc, char** argv)
         break;
 #endif
     }
+
+#ifdef PLATFORM_PHYSFS
+    PHYSFS_deinit();
+#endif
+
     return 1;
 }
 
@@ -363,7 +379,7 @@ int main(int argc, char** argv)
 
 //#include "external/libbacktrace/backtrace.h"
 
-#ifndef ARCH_WASM
+#if !defined(ARCH_WASM) && !defined(TARGET_ANDROID)
 
 #if 0
 static int
@@ -457,7 +473,7 @@ void crash_handler_full(int sig)
     //struct backtrace_state *lbstate;
 
     //printf ("Backtrace:\n");
-    //lbstate = backtrace_create_state (executable_path, 1, error_callback, NULL);      
+    //lbstate = backtrace_create_state (openjkdf2_pExecutablePath, 1, error_callback, NULL);      
     //backtrace_full(lbstate, 0, full_callback, error_callback, 0);
     exit(1);
 }
@@ -928,7 +944,7 @@ void do_hooks()
     hook_function(stdStrTable_Load_ADDR, stdStrTable_Load);
     hook_function(stdStrTable_Free_ADDR, stdStrTable_Free);
     hook_function(stdStrTable_GetUniString_ADDR, stdStrTable_GetUniString);
-    hook_function(stdStrTable_GetString_ADDR, stdStrTable_GetString);
+    hook_function(stdStrTable_GetStringWithFallback_ADDR, stdStrTable_GetStringWithFallback);
     
     // stdPcx
     hook_function(stdPcx_Load_ADDR, stdPcx_Load);
@@ -938,7 +954,7 @@ void do_hooks()
     hook_function(sithStrTable_Startup_ADDR, sithStrTable_Startup);
     hook_function(sithStrTable_Shutdown_ADDR, sithStrTable_Shutdown);
     hook_function(sithStrTable_GetUniString_ADDR, sithStrTable_GetUniString);
-    hook_function(sithStrTable_GetString_ADDR, sithStrTable_GetString);
+    hook_function(sithStrTable_GetUniStringWithFallback_ADDR, sithStrTable_GetUniStringWithFallback);
 
 #ifndef LINUX
     // stdConsole
@@ -1759,8 +1775,8 @@ void do_hooks()
     // jkStrings
     hook_function(jkStrings_Startup_ADDR, jkStrings_Startup);
     hook_function(jkStrings_Shutdown_ADDR, jkStrings_Shutdown);
-    hook_function(jkStrings_GetText2_ADDR, jkStrings_GetText2);
-    hook_function(jkStrings_GetText_ADDR, jkStrings_GetText);
+    hook_function(jkStrings_GetUniString_ADDR, jkStrings_GetUniString);
+    hook_function(jkStrings_GetUniStringWithFallback_ADDR, jkStrings_GetUniStringWithFallback);
     hook_function(jkStrings_unused_sub_40B490_ADDR, jkStrings_unused_sub_40B490);
     
     // jkControl
@@ -1977,8 +1993,8 @@ void do_hooks()
     hook_function(sithAI_Jump_ADDR, sithAI_Jump);
     hook_function(sithAI_RandomFireVector_ADDR, sithAI_RandomFireVector);
     hook_function(sithAI_sub_4EAD60_ADDR, sithAI_sub_4EAD60);
-    hook_function(sithAI_sub_4EC140_ADDR, sithAI_sub_4EC140);
-    hook_function(sithAI_sub_4EB090_ADDR, sithAI_sub_4EB090);
+    hook_function(sithAI_CanDetectSightThing_ADDR, sithAI_CanDetectSightThing);
+    hook_function(sithAI_CheckSightThing_ADDR, sithAI_CheckSightThing);
     hook_function(sithAI_sub_4EAF40_ADDR, sithAI_sub_4EAF40);
     hook_function(sithAI_FireWeapon_ADDR, sithAI_FireWeapon);
     hook_function(sithAI_sub_4EB300_ADDR, sithAI_sub_4EB300);
@@ -2245,7 +2261,7 @@ void do_hooks()
     hook_function(jkGuiBuildMulti_Show_ADDR, jkGuiBuildMulti_Show);
     hook_function(jkGuiBuildMulti_Show2_ADDR, jkGuiBuildMulti_Show2);
     hook_function(jkGuiBuildMulti_ShowNewCharacter_ADDR, jkGuiBuildMulti_ShowNewCharacter);
-    hook_function(jkGuiBuildMulti_sub_41D000_ADDR, jkGuiBuildMulti_sub_41D000);
+    hook_function(jkGuiBuildMulti_sub_41D000_ADDR, jkGuiBuildMulti_menuNewCharacter_rankArrowButtonClickHandler);
     hook_function(jkGuiBuildMulti_ShowLoad_ADDR, jkGuiBuildMulti_ShowLoad);
     hook_function(jkGuiBuildMulti_sub_41D680_ADDR, jkGuiBuildMulti_sub_41D680);
     hook_function(jkGuiBuildMulti_sub_41D830_ADDR, jkGuiBuildMulti_sub_41D830);

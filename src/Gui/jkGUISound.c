@@ -20,7 +20,7 @@
 // Added
 float jkGuiSound_cutsceneVolume = 1.0;
 
-static int slider_1[2] = {18, 17};
+static int slider_images[2] = {JKGUI_BM_SLIDER_BACK, JKGUI_BM_SLIDER_THUMB};
 
 static jkGuiElement jkGuiSound_elements[25] = {
     {ELEMENT_TEXT, 0, 0, 0, 3, {0, 410, 640, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
@@ -33,16 +33,16 @@ static jkGuiElement jkGuiSound_elements[25] = {
     {ELEMENT_CHECKBOX, 0, 0, "GUI_ENABLE3DSOUND", 0, {30, 150, 240, 40}, 1, 0, "GUI_ENABLE3DSOUND_HINT", 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_LOWRESSOUNDS", 2, {30, 270, 240, 40}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_MUSICVOLUME", 3, {340, 140, 220, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
-    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 160, 320, 30}, 1, 0, "GUI_MUSICVOLUME_HINT", 0, 0, slider_1, {0}, 0},
+    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 160, 320, 30}, 1, 0, "GUI_MUSICVOLUME_HINT", 0, 0, slider_images, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_OFF", 2, {300, 190, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_MAX", 2, {580, 190, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_SFXVOLUME", 3, {340, 220, 220, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
-    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 245, 320, 30}, 1, 0, "GUI_SFXVOLUME_HINT", 0, 0, slider_1, {0}, 0},
+    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 245, 320, 30}, 1, 0, "GUI_SFXVOLUME_HINT", 0, 0, slider_images, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_OFF", 2, {300, 280, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_MAX", 2, {580, 280, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
 #ifdef SDL2_RENDER
     {ELEMENT_TEXT, 0, 0, L"Cutscene Volume", 3, {340, 310, 220, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
-    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 335, 320, 30}, 1, 0, L"Set the volume of audio during cutscenes.", 0, 0, slider_1, {0}, 0},
+    {ELEMENT_SLIDER, 0, 0, (const char*)100, 0, {300, 335, 320, 30}, 1, 0, L"Set the volume of audio during cutscenes.", 0, 0, slider_images, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_OFF", 2, {310, 370, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, L"", 2, {450, 370, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
     {ELEMENT_TEXT, 0, 0, "GUI_MAX", 2, {590, 370, 40, 20}, 1, 0, 0, 0, 0, 0, {0}, 0},
@@ -62,7 +62,7 @@ static jkGuiMenu jkGuiSound_menu = {jkGuiSound_elements, 0, 0xFFFF, 0xFFFF, 0xF,
 
 void jkGuiSound_Startup()
 {
-    jkGui_InitMenu(&jkGuiSound_menu, jkGui_stdBitmaps[3]);
+    jkGui_InitMenu(&jkGuiSound_menu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
 
     jkGuiSound_musicVolume = wuRegistry_GetFloat("musicVolume", jkGuiSound_musicVolume);
     jkGuiSound_sfxVolume = wuRegistry_GetFloat("sfxVolume", jkGuiSound_sfxVolume);
@@ -113,9 +113,9 @@ int jkGuiSound_Show()
 
     // START MOTS removed:
     if ( jkGuiSound_bLowResSound )
-        v0 = jkStrings_GetText("GUI_LOWRESSOUNDS");
+        v0 = jkStrings_GetUniStringWithFallback("GUI_LOWRESSOUNDS");
     else
-        v0 = jkStrings_GetText("GUI_HIGHRESSOUNDS");
+        v0 = jkStrings_GetUniStringWithFallback("GUI_HIGHRESSOUNDS");
 
     jkGuiSound_elements[8].wstr = v0;
     // END MOTS removed
@@ -144,8 +144,8 @@ int jkGuiSound_Show()
         jkGuiSound_numChannels = jkGuiSound_elements[18].selectedTextEntry + 8;
         if ( jkGuiSound_b3DSound_3 && jkGuiSound_elements[7].selectedTextEntry != jkGuiSound_b3DSound_2 )
         {
-            v4 = jkStrings_GetText("GUISOUND_MUSTRESTART");
-            v2 = jkStrings_GetText("GUISOUND_WARNING");
+            v4 = jkStrings_GetUniStringWithFallback("GUISOUND_MUSTRESTART");
+            v2 = jkStrings_GetUniStringWithFallback("GUISOUND_WARNING");
             jkGuiDialog_ErrorDialog(v2, v4);
             jkGuiSound_b3DSound_2 = jkGuiSound_elements[7].selectedTextEntry;
             wuRegistry_SaveBool("b3DSound", (HKEY)jkGuiSound_elements[7].selectedTextEntry);

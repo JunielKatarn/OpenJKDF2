@@ -209,11 +209,11 @@ void sithDSS_SendAIStatus(sithActor *actor, int sendto_id, int idx)
     NETMSG_START;
 
     NETMSG_PUSHS16(actor->thing->thingIdx);
-    NETMSG_PUSHS16((int16_t)(((intptr_t)actor->aiclass - (intptr_t)sithWorld_pCurrentWorld->aiclasses) / sizeof(sithAIClass)));
+    NETMSG_PUSHS16((int16_t)(((intptr_t)actor->pAIClass - (intptr_t)sithWorld_pCurrentWorld->aiclasses) / sizeof(sithAIClass)));
     NETMSG_PUSHU32(actor->flags);
     NETMSG_PUSHU32(actor->nextUpdate);
-    if ( actor->thingidk ) {
-        NETMSG_PUSHS16(actor->thingidk->thingIdx);
+    if ( actor->pMoveThing ) {
+        NETMSG_PUSHS16(actor->pMoveThing->thingIdx);
     }
     else {
         NETMSG_PUSHS16(-1);
@@ -242,8 +242,8 @@ void sithDSS_SendAIStatus(sithActor *actor, int sendto_id, int idx)
     }
     if (actor->flags & SITHAI_MODE_FLEEING)
     {
-        if ( actor->field_1C0 ) {
-            NETMSG_PUSHS16(actor->field_1C0->thingIdx);
+        if ( actor->pFleeThing) {
+            NETMSG_PUSHS16(actor->pFleeThing->thingIdx);
         }
         else {
             NETMSG_PUSHS16(-1);
@@ -264,7 +264,7 @@ void sithDSS_SendAIStatus(sithActor *actor, int sendto_id, int idx)
     NETMSG_PUSHU32(actor->loadedFrames);
     for (int i = 0; i < actor->loadedFrames; i++)
     {
-        NETMSG_PUSHVEC3(actor->framesAlloc[i]);
+        NETMSG_PUSHVEC3(actor->paFrames[i]);
     }
     
     NETMSG_END(DSS_AISTATUS);
@@ -292,11 +292,11 @@ int sithDSS_ProcessAIStatus(sithCogMsg *msg)
     if ( idx >= sithWorld_pCurrentWorld->numAIClassesLoaded )
         return 0;
 
-    actor->aiclass = &sithWorld_pCurrentWorld->aiclasses[idx];
+    actor->pAIClass = &sithWorld_pCurrentWorld->aiclasses[idx];
     actor->numAIClassEntries = sithWorld_pCurrentWorld->aiclasses[idx].numEntries;
     actor->flags = NETMSG_POPU32();
     actor->nextUpdate = NETMSG_POPU32();
-    actor->thingidk = sithThing_GetThingByIdx(NETMSG_POPS16());
+    actor->pMoveThing = sithThing_GetThingByIdx(NETMSG_POPS16());
     actor->field_224 = 0; // interesting?
     
     actor->movepos = NETMSG_POPVEC3();
@@ -321,7 +321,7 @@ int sithDSS_ProcessAIStatus(sithCogMsg *msg)
     }
     if (actor->flags & SITHAI_MODE_FLEEING)
     {
-        actor->field_1C0 = sithThing_GetThingByIdx(NETMSG_POPS16());
+        actor->pFleeThing = sithThing_GetThingByIdx(NETMSG_POPS16());
     }
     actor->position = NETMSG_POPVEC3();
     actor->lookOrientation = NETMSG_POPVEC3();
@@ -341,13 +341,13 @@ int sithDSS_ProcessAIStatus(sithCogMsg *msg)
     
     if ( actor->loadedFrames)
     {
-        actor->framesAlloc = (rdVector3 *)pSithHS->alloc(sizeof(rdVector3) * actor->loadedFrames);
+        actor->paFrames = (rdVector3 *)pSithHS->alloc(sizeof(rdVector3) * actor->loadedFrames);
         actor->sizeFrames = actor->loadedFrames;
-        if ( actor->framesAlloc )
+        if ( actor->paFrames )
         {
             for (int i = 0; i < actor->loadedFrames; i++)
             {
-                actor->framesAlloc[i] = NETMSG_POPVEC3();
+                actor->paFrames[i] = NETMSG_POPVEC3();
             }
             return 1;
         }
@@ -356,7 +356,7 @@ int sithDSS_ProcessAIStatus(sithCogMsg *msg)
     {
         actor->sizeFrames = 0;
         actor->loadedFrames = 0;
-        actor->framesAlloc = NULL; // Added
+        actor->paFrames = NULL; // Added
     }
     return 1;
 }

@@ -56,17 +56,17 @@ void jkGuiSetup_sub_412EF0(jkGuiMenu *menu, int a2)
     jkGuiElement *paElements; // eax
 
     paElements = menu->paElements;
-    paElements[2].anonymous_9 = 1;
-    paElements[3].anonymous_9 = 1;
-    paElements[4].anonymous_9 = 1;
-    paElements[5].anonymous_9 = 1;
-    paElements[6].anonymous_9 = 1;
+    paElements[2].enableHover = 1;
+    paElements[3].enableHover = 1;
+    paElements[4].enableHover = 1;
+    paElements[5].enableHover = 1;
+    paElements[6].enableHover = 1;
     if ( a2 )
     {
-        paElements[7].anonymous_9 = 1;
-        paElements[8].anonymous_9 = 1;
-        paElements[9].anonymous_9 = 1;
-        paElements[10].anonymous_9 = 1;
+        paElements[7].enableHover = 1;
+        paElements[8].enableHover = 1;
+        paElements[9].enableHover = 1;
+        paElements[10].enableHover = 1;
     }
 }
 
@@ -167,8 +167,8 @@ LABEL_23:
 
 void jkGuiSetup_Startup()
 {
-    jkGui_InitMenu(&jkGuiSetup_menu, jkGui_stdBitmaps[3]);
-    jkGui_InitMenu(&jkGuiSetupControls_menu, jkGui_stdBitmaps[3]);
+    jkGui_InitMenu(&jkGuiSetup_menu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
+    jkGui_InitMenu(&jkGuiSetupControls_menu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
 }
 
 void jkGuiSetup_Shutdown()

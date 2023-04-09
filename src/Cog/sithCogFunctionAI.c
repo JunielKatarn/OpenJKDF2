@@ -101,7 +101,7 @@ void sithCogFunctionAI_AISetMoveFrame(sithCog *ctx)
             v3 = v2->actor;
             if ( v3 )
             {
-                v4 = v3->framesAlloc;
+                v4 = v3->paFrames;
                 if ( v4 )
                 {
                     if ( v1 < v3->loadedFrames )
@@ -129,7 +129,7 @@ void sithCogFunctionAI_AISetMoveThing(sithCog *ctx)
         v3 = v2->actor;
         if ( v3 )
         {
-            v3->thingidk = v1;
+            v3->pMoveThing = v1;
             sithAI_SetMoveThing(v3, &v1->position, v3->moveSpeed);
         }
     }
@@ -180,7 +180,7 @@ void sithCogFunctionAI_AISetLookFrame(sithCog *ctx)
             v3 = v2->actor;
             if ( v3 )
             {
-                v4 = v3->framesAlloc;
+                v4 = v3->paFrames;
                 if ( v4 )
                 {
                     if ( v1 < v3->loadedFrames )
@@ -444,7 +444,7 @@ void sithCogFunctionAI_sub_501330(sithCog *ctx)
         v7 = (void *)v4->func;
         do
         {
-            if ( v3->aiclass->entries[v6].func == v7 )
+            if ( v3->pAIClass->entries[v6].func == v7 )
                 break;
             ++v6;
         }
@@ -492,7 +492,7 @@ void sithCogFunctionAI_AIFlee(sithCog *ctx)
                 if ( v3 )
                 {
                     v4 = v3->flags;
-                    v3->field_1C0 = v1;
+                    v3->pFleeThing = v1;
                     if ( (v4 & SITHAI_MODE_FLEEING) == 0 )
                     {
                         v3->flags |= SITHAI_MODE_FLEEING;
@@ -518,9 +518,9 @@ void sithCogFunctionAI_AISetClass(sithCog *ctx)
         v3 = thing->actor;
         if ( v3 )
         {
-            thing->aiclass = aiclass;
+            thing->pAIClass = aiclass;
             v4 = aiclass->numEntries;
-            v3->aiclass = aiclass;
+            v3->pAIClass = aiclass;
             v3->numAIClassEntries = v4;
         }
     }
@@ -530,9 +530,9 @@ void sithCogFunctionAI_AISetClass(sithCog *ctx)
 void sithCogFunctionAI_AIGetAlignment(sithCog *ctx)
 {
     sithThing* pThing = sithCogExec_PopThing(ctx);
-    if (pThing && pThing->thingtype == SITH_THING_ACTOR && pThing->actor && pThing->actor->aiclass) 
+    if (pThing && pThing->thingtype == SITH_THING_ACTOR && pThing->actor && pThing->actor->pAIClass) 
     {
-        sithCogExec_PushFlex(ctx, pThing->actor->aiclass->alignment);
+        sithCogExec_PushFlex(ctx, pThing->actor->pAIClass->alignment);
         return;
     }
     sithCogExec_PushFlex(ctx, 0.0);
@@ -543,9 +543,9 @@ void sithCogFunctionAI_AISetAlignment(sithCog *ctx)
 {
     float val = sithCogExec_PopFlex(ctx);
     sithThing* pThing = sithCogExec_PopThing(ctx);
-    if (pThing && pThing->thingtype == SITH_THING_ACTOR && pThing->actor && pThing->actor->aiclass) 
+    if (pThing && pThing->thingtype == SITH_THING_ACTOR && pThing->actor && pThing->actor->pAIClass) 
     {
-        pThing->actor->aiclass->alignment = val;
+        pThing->actor->pAIClass->alignment = val;
     }
 }
 

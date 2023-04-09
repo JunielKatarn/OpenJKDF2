@@ -103,7 +103,7 @@ void jkGui_InitMenu(jkGuiMenu *menu, stdBitmap *bgBitmap)
 
         if ( iter->hintText )
         {
-            wchar_t* text = jkStrings_GetText2(iter->hintText);
+            wchar_t* text = jkStrings_GetUniString(iter->hintText);
             if ( text ) {
                 iter->wHintText = stdString_FastWCopy(text);
                 iter->wHintTextAlloced = iter->wHintText;
@@ -114,7 +114,7 @@ void jkGui_InitMenu(jkGuiMenu *menu, stdBitmap *bgBitmap)
         {
             if ( iter->str )
             {
-                wchar_t* text = jkStrings_GetText2(iter->str);
+                wchar_t* text = jkStrings_GetUniString(iter->str);
                 if ( text ) {
                     iter->wstr = stdString_FastWCopy(text);
                     iter->strAlloced = (const char*)iter->wstr;
@@ -158,7 +158,7 @@ int jkGui_Startup()
     }
 
     Window_ShowCursorUnwindowed(Main_bWindowGUI == 0);
-    jkGuiRend_SetPalette(jkGui_stdBitmaps[0]->palette);
+    jkGuiRend_SetPalette(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->palette);
     jkGui_bInitialized = 1;
     return 1;
 }
@@ -292,7 +292,7 @@ void jkGui_sub_412E20(jkGuiMenu *menu, int a2, int a3, int a4)
         jkGuiElement* element = jkGuiRend_MenuGetClickableById(menu, i);
         if ( element )
         {
-            element->field_8 = 2;
+            element->textType = 2;
             element->type = ELEMENT_TEXTBUTTON;
         }
     }
@@ -302,7 +302,7 @@ void jkGui_sub_412E20(jkGuiMenu *menu, int a2, int a3, int a4)
         jkGuiElement* element = jkGuiRend_MenuGetClickableById(menu, a4);
         if ( element )
         {
-            element->field_8 = 3;
+            element->textType = 3;
             element->type = ELEMENT_TEXT;
         }
     }

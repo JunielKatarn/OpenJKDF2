@@ -55,7 +55,7 @@ void sithMap_DrawCircle(rdCamera *camera, rdMatrix34 *viewMat)
     v2 = sithMap_pPlayerThing;
     sithMap_var = 1;
     v3 = sithMap_pPlayerThing->sector;
-    if ( v3->field_8C == sithRender_lastRenderTick )
+    if ( v3->renderTick == sithRender_lastRenderTick )
     {
 LABEL_10:
         v2 = sithMap_pPlayerThing;
@@ -65,7 +65,7 @@ LABEL_10:
 
     if ( (v3->flags & SITH_SECTOR_AUTOMAPVISIBLE) != 0 || (g_mapModeFlags & 2) != 0 )
     {
-        v3->field_8C = sithRender_lastRenderTick;
+        v3->renderTick = sithRender_lastRenderTick;
         if ( (v3->flags & 0x10) != 0 )
             v5 = 1;
         else
@@ -92,7 +92,7 @@ void sithMap_sub_4EC4D0(sithSector *sector)
     int v2; // eax
     sithAdjoin *i; // esi
 
-    if ( ++sithMap_var >= 20 || sector->field_8C == sithRender_lastRenderTick )
+    if ( ++sithMap_var >= 20 || sector->renderTick == sithRender_lastRenderTick )
     {
 LABEL_11:
         --sithMap_var;
@@ -101,7 +101,7 @@ LABEL_11:
 
     if ( (sector->flags & SITH_SECTOR_AUTOMAPVISIBLE) != 0 || (g_mapModeFlags & 2) != 0 )
     {
-        sector->field_8C = sithRender_lastRenderTick;
+        sector->renderTick = sithRender_lastRenderTick;
         if ( (sector->flags & SITH_SECTOR_AUTOMAPHIDE) != 0 )
             v2 = 1;
         else
@@ -224,10 +224,10 @@ int sithMap_Draw(sithSector *sector)
                             {
                                 point1 = sithMap_pCurWorld->verticesTransformed[v16];
                                 point2 = sithMap_pCurWorld->verticesTransformed[v17];
-                                if ( rdClip_Line3Project(sithMap_pCurCamera->cameraClipFrustum, &point1, &point2, &out1, &out2) )
+                                if ( rdClip_Line3Project(sithMap_pCurCamera->pClipFrustum, &point1, &point2, &out1, &out2) )
                                 {
-                                    sithMap_pCurCamera->project(&v46, &point1);
-                                    sithMap_pCurCamera->project(&v43, &point2);
+                                    sithMap_pCurCamera->fnProject(&v46, &point1);
+                                    sithMap_pCurCamera->fnProject(&v43, &point2);
                                     v18 = 0;
                                     v19 = 0;
                                     if ( sithMap_ctx.numArr )
@@ -283,7 +283,7 @@ LABEL_22:
     {
         for ( i = v1->thingsList; i; i = i->nextThing )
         {
-            if ( i != sithWorld_pCurrentWorld->cameraFocus && (i->thingflags & 0x80012) == 0 )
+            if ( i != sithWorld_pCurrentWorld->cameraFocus && (i->thingflags & (SITH_TF_DISABLED|SITH_TF_10|SITH_TF_WILLBEREMOVED)) == 0 )
             {
                 int v37 = (g_mapModeFlags & 0x40) != 0;
                 switch ( i->thingtype )

@@ -64,7 +64,7 @@ static jkGuiMenu jkGuiEsc_menu = { jkGuiEsc_aElements, -1, 0x0FFFF, 0x0FFFF, 0x0
 
 void jkGuiEsc_Startup()
 {
-    jkGui_InitMenu(&jkGuiEsc_menu, jkGui_stdBitmaps[4]);
+    jkGui_InitMenu(&jkGuiEsc_menu, jkGui_stdBitmaps[JKGUI_BM_BK_ESC]);
     jkGuiEsc_bInitialized = 1;
 }
 
@@ -141,7 +141,7 @@ void jkGuiEsc_Show()
                 return;
 
             case JKGUIESC_RESTART:
-                if ( !jkGuiDialog_YesNoDialog(jkStrings_GetText("GUI_RESTART_MISSION"), jkStrings_GetText("GUI_CONFIRM_RESTART")) )
+                if ( !jkGuiDialog_YesNoDialog(jkStrings_GetUniStringWithFallback("GUI_RESTART_MISSION"), jkStrings_GetUniStringWithFallback("GUI_CONFIRM_RESTART")) )
                     continue;
                 jkPlayer_LoadAutosave();
                 jkMain_MissionReload();
@@ -162,7 +162,7 @@ void jkGuiEsc_Show()
                 continue;
 
             case JKGUIESC_ABORT:
-                if ( !jkGuiDialog_YesNoDialog(jkStrings_GetText("GUI_ABORT_GAME"), jkStrings_GetText("GUI_CONFIRM_ABORT")) )
+                if ( !jkGuiDialog_YesNoDialog(jkStrings_GetUniStringWithFallback("GUI_ABORT_GAME"), jkStrings_GetUniStringWithFallback("GUI_CONFIRM_ABORT")) )
                     continue;
                 jkMain_MenuReturn();
                 jkGuiRend_UpdateSurface();

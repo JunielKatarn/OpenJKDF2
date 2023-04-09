@@ -14,6 +14,7 @@
 #include "General/stdString.h"
 #include "stdPlatform.h"
 #include "jk.h"
+#include "types.h"
 
 static char *jkGuiRend_LoadedSounds[4] = {0};
 static uint8_t jkGuiRend_palette[0x300] = {0};
@@ -210,7 +211,7 @@ void jkGuiRend_UpdateDrawMenu(jkGuiMenu *menu)
     if ( idx >= 0 )
     {
         jkGuiElement* clickable = menu->lastMouseOverClickable;
-        if ( clickable && clickable->hintText && clickable->bIsVisible && !clickable->anonymous_9 )
+        if ( clickable && clickable->hintText && clickable->bIsVisible && !clickable->enableHover )
             menu->paElements[idx].str = clickable->hintText;
         else
             menu->paElements[idx].str = 0;
@@ -705,12 +706,12 @@ void jkGuiRend_DarrayFreeEntry(Darray *array)
 
 int jkGuiRend_sub_5103E0(jkGuiElement *element)
 {
-    return (element->bIsVisible && !element->anonymous_9 && element->type >= ELEMENT_LISTBOX && element->type <= ELEMENT_TEXTBOX);
+    return (element->bIsVisible && !element->enableHover && (element->type == ELEMENT_LISTBOX || element->type == ELEMENT_TEXTBOX));
 }
 
 int jkGuiRend_ElementHasHoverSound(jkGuiElement *element)
 {
-    if ( !element->bIsVisible || element->anonymous_9 )
+    if ( !element->bIsVisible || element->enableHover )
         return 0;
 
     switch ( element->type )
@@ -759,7 +760,7 @@ void jkGuiRend_UpdateAndDrawClickable(jkGuiElement *clickable, jkGuiMenu *menu, 
         if ( !drawFunc )
             drawFunc = jkGuiRend_elementHandlers[clickable->type].draw;
         jkGuiElement* lastSave = menu->lastMouseOverClickable;
-        if ( clickable->anonymous_9 )
+        if ( clickable->enableHover )
             menu->lastMouseOverClickable = 0;
         drawFunc(clickable, menu, jkGuiRend_menuBuffer, forceRedraw);
         menu->lastMouseOverClickable = lastSave;
@@ -794,27 +795,27 @@ int jkGuiRend_InvokeEvent(jkGuiElement *element, jkGuiMenu *menu, int eventType,
 {
     jkGuiEventHandlerFunc_t fnEventHandler;
 
-    if ( element && (!eventType || element->bIsVisible && !element->anonymous_9) && (fnEventHandler = jkGuiRend_elementHandlers[element->type].fnEventHandler) != 0 )
+    if ( element && (!eventType || element->bIsVisible && !element->enableHover) && (fnEventHandler = jkGuiRend_elementHandlers[element->type].fnEventHandler) != 0 )
         return fnEventHandler(element, menu, eventType, eventParam);
     else
         return 0;
 }
 
-int jkGuiRend_InvokeClicked(jkGuiElement *clickable, jkGuiMenu *menu, int mouseX, int mouseY, int a5)
+int jkGuiRend_InvokeClicked(jkGuiElement *clickable, jkGuiMenu *menu, int mouseX, int mouseY, BOOL redraw)
 {
     jkGuiClickHandlerFunc_t handler;
 
-    if ( !clickable->bIsVisible || clickable->anonymous_9 )
+    if ( !clickable->bIsVisible || clickable->enableHover )
         return 0;
 
-    handler = clickable->func;
+    handler = clickable->clickHandlerFunc;
     if ( !handler )
     {
         handler = jkGuiRend_elementHandlers[clickable->type].fnClickHandler;
     }
 
     if (handler)
-        menu->lastClicked = handler(clickable, menu, mouseX, mouseY, a5);
+        menu->lastClicked = handler(clickable, menu, mouseX, mouseY, redraw);
 
     return menu->lastClicked;
 }
@@ -830,7 +831,7 @@ void jkGuiRend_RenderFocused(jkGuiMenu *menu, jkGuiElement *element)
     jkGuiElement *focusedElement; // edi
 
     focusedElement = menu->focusedElement;
-    if ( element && element->bIsVisible && !element->anonymous_9 && element->type >= ELEMENT_LISTBOX && element->type <= ELEMENT_TEXTBOX )
+    if ( element && element->bIsVisible && !element->enableHover && element->type >= ELEMENT_LISTBOX && element->type <= ELEMENT_TEXTBOX )
     {
         menu->focusedElement = element;
         if ( focusedElement )
@@ -868,7 +869,7 @@ LABEL_12:
     }
     if ( !iter->bIsVisible )
         goto LABEL_12;
-    if ( iter->anonymous_9 )
+    if ( iter->enableHover )
         goto LABEL_12;
     if ( iter->type < ELEMENT_LISTBOX || iter->type > ELEMENT_TEXTBOX )
         goto LABEL_12;
@@ -913,7 +914,7 @@ void jkGuiRend_RenderIdk2_alt(jkGuiMenu *menu)
         iter = &menu->paElements[idxOther];
         if ( menu->paElements[idxOther].type != ELEMENT_END )
         {
-            if ( iter->bIsVisible && !iter->anonymous_9 && !(iter->type < ELEMENT_LISTBOX || iter->type > ELEMENT_TEXTBOX))
+            if ( iter->bIsVisible && !iter->enableHover && !(iter->type < ELEMENT_LISTBOX || iter->type > ELEMENT_TEXTBOX))
                 break;
         }
         else
@@ -979,7 +980,7 @@ void jkGuiRend_RenderAll(jkGuiMenu *menu)
                 ++idxOther;
             }
         }
-        else if ( menu->paElements[idxOther].bIsVisible && !menu->paElements[idxOther].anonymous_9 && menu->paElements[idxOther].type >= ELEMENT_LISTBOX && menu->paElements[idxOther].type <= ELEMENT_TEXTBOX)
+        else if ( menu->paElements[idxOther].bIsVisible && !menu->paElements[idxOther].enableHover && menu->paElements[idxOther].type >= ELEMENT_LISTBOX && menu->paElements[idxOther].type <= ELEMENT_TEXTBOX)
         {
             break;
         }
@@ -1192,6 +1193,9 @@ void jkGuiRend_sub_510C60(jkGuiElement *element)
             if ( v7 <= v8 )
                 v8 = element->texInfo.textScrollY;
         }
+
+        // Added: prevent infloop?
+        int safety_switch = 0;
         while ( 1 )
         {
             while ( 1 )
@@ -1200,17 +1204,27 @@ void jkGuiRend_sub_510C60(jkGuiElement *element)
                 if ( v4 >= v8 )
                     break;
                 --v8;
+
+                // Added: prevent infloop?
+                if (++safety_switch >= 0x1000) {
+                    break;
+                }
             }
             if ( v4 < v8 + v6 - 2 )
                 break;
             ++v8;
+
+            // Added: prevent infloop?
+            if (++safety_switch >= 0x1000) {
+                break;
+            }
         }
     }
 }
 
-int jkGuiRend_ClickSound(jkGuiElement *element, jkGuiMenu *menu, int mouseX, int mouseY, int a5)
+int jkGuiRend_ClickSound(jkGuiElement *element, jkGuiMenu *menu, int mouseX, int mouseY, BOOL redraw)
 {
-    if ( !a5 )
+    if ( !redraw )
         return 0;
     jkGuiRend_PlayWav(menu->soundClick);
     return element->hoverId;
@@ -1252,7 +1266,7 @@ int jkGuiRend_ListBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
     if (eventType == JKGUI_EVENT_INIT)
     {
         v19 = 2;
-        v20 = &menu->fonts[element->field_8];
+        v20 = &menu->fonts[element->textType];
         do
         {
             if ( *v20 )
@@ -1332,14 +1346,14 @@ int jkGuiRend_ListBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
         switch ( eventParam )
         {
             case VK_RETURN:
-                if ( element_->func )
-                    menu->lastClicked = element_->func(element_, menu, v12, v11, 1);
+                if ( element_->clickHandlerFunc )
+                    menu->lastClicked = element_->clickHandlerFunc(element_, menu, v12, v11, 1);
                 break;
             case VK_ESCAPE:
-                if ( element_->func )
+                if ( element_->clickHandlerFunc )
                 {
                     element_->texInfo.anonymous_18 = 1;
-                    menu->lastClicked = element_->func(element_, menu, v12, v11, 0);
+                    menu->lastClicked = element_->clickHandlerFunc(element_, menu, v12, v11, 0);
                     element_->texInfo.anonymous_18 = 0;
                 }
                 break;
@@ -1364,9 +1378,9 @@ int jkGuiRend_ListBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
         }
         if ( element_->selectedTextEntry != a1a )
         {
-            if ( element_->func )
+            if ( element_->clickHandlerFunc )
             {
-                menu->lastClicked = element_->func(element_, menu, v12, v11, 0);
+                menu->lastClicked = element_->clickHandlerFunc(element_, menu, v12, v11, 0);
                 return 0;
             }
         }
@@ -1376,7 +1390,7 @@ int jkGuiRend_ListBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
 
 void jkGuiRend_ListBoxDraw(jkGuiElement *element_, jkGuiMenu *menu, stdVBuffer *vbuf, int redraw)
 {
-    uint32_t *v6; // eax
+    uint32_t *bitmapIndices; // eax
     int v10; // eax
     int v11; // ecx
     int v12; // edi
@@ -1385,14 +1399,14 @@ void jkGuiRend_ListBoxDraw(jkGuiElement *element_, jkGuiMenu *menu, stdVBuffer *
     jkGuiStringEntry* v16; // ebp
     int v17; // eax
     int v19; // eax
-    stdBitmap *v20; // [esp+10h] [ebp-20h]
-    stdBitmap *v21; // [esp+14h] [ebp-1Ch]
+    stdBitmap *topArrowBitmap; // [esp+10h] [ebp-20h]
+    stdBitmap *bottomArrowBitmap; // [esp+14h] [ebp-1Ch]
     rdRect renderRect; // [esp+20h] [ebp-10h]
     int element; // [esp+34h] [ebp+4h]
 
-    v6 = element_->anonymous_13;
-    v20 = menu->ui_structs[*v6];
-    v21 = menu->ui_structs[v6[1]];
+    bitmapIndices = element_->uiBitmaps;
+    topArrowBitmap = menu->ui_structs[*bitmapIndices];
+    bottomArrowBitmap = menu->ui_structs[bitmapIndices[1]];
     if ( redraw )
         jkGuiRend_CopyVBuffer(menu, &element_->texInfo.rect);
     if ( menu->focusedElement == element_ )
@@ -1418,16 +1432,16 @@ void jkGuiRend_ListBoxDraw(jkGuiElement *element_, jkGuiMenu *menu, stdVBuffer *
             {
                 mipLevel = 0;
             }
-            else if ( mipLevel > v20->numMips - 1 )
+            else if ( mipLevel > topArrowBitmap->numMips - 1 )
             {
-                mipLevel = v20->numMips - 1;
+                mipLevel = topArrowBitmap->numMips - 1;
             }
             renderRect.y = 0;
             renderRect.x = 0;
-            renderRect.width = v20->mipSurfaces[mipLevel]->format.width;
-            renderRect.height = v20->mipSurfaces[mipLevel]->format.height;
+            renderRect.width = topArrowBitmap->mipSurfaces[mipLevel]->format.width;
+            renderRect.height = topArrowBitmap->mipSurfaces[mipLevel]->format.height;
             v15 = element_->texInfo.textHeight - renderRect.height;
-            stdDisplay_VBufferCopy(vbuf, v20->mipSurfaces[mipLevel], v11 + (element_->rect.width - renderRect.width) / 2, v12 + v15 / 2, &renderRect, 1);
+            stdDisplay_VBufferCopy(vbuf, topArrowBitmap->mipSurfaces[mipLevel], v11 + (element_->rect.width - renderRect.width) / 2, v12 + v15 / 2, &renderRect, 1);
             v12 += element_->texInfo.textHeight;
         }
         for (int i = element_->texInfo.textScrollY; i <= element; i++)
@@ -1435,11 +1449,11 @@ void jkGuiRend_ListBoxDraw(jkGuiElement *element_, jkGuiMenu *menu, stdVBuffer *
             v16 = &element_->unistr[i];
             stdFont_sub_434EC0(
                 vbuf,
-                menu->fonts[element_->field_8 + (i == element_->selectedTextEntry)],
+                menu->fonts[element_->textType + (i == element_->selectedTextEntry)],
                 v11,
                 v12,
                 element_->rect.width - 6,
-                (int*)menu->anonymous_7,
+                (int*)menu->paddings,
                 v16->str,
                 1);
             v12 += element_->texInfo.textHeight;
@@ -1454,23 +1468,23 @@ void jkGuiRend_ListBoxDraw(jkGuiElement *element_, jkGuiMenu *menu, stdVBuffer *
             {
                 v17 = 0;
             }
-            else if ( v17 > v21->numMips - 1 )
+            else if ( v17 > bottomArrowBitmap->numMips - 1 )
             {
-                v17 = v21->numMips - 1;
+                v17 = bottomArrowBitmap->numMips - 1;
             }
             renderRect.y = 0;
             renderRect.x = 0;
-            renderRect.width = v21->mipSurfaces[v17]->format.width;
-            v19 = element_->texInfo.textHeight - v21->mipSurfaces[v17]->format.height;
-            renderRect.height = v21->mipSurfaces[v17]->format.height;
-            stdDisplay_VBufferCopy(vbuf, v21->mipSurfaces[v17], v11 + (element_->rect.width - renderRect.width) / 2, v12 + v19 / 2, &renderRect, 1);
+            renderRect.width = bottomArrowBitmap->mipSurfaces[v17]->format.width;
+            v19 = element_->texInfo.textHeight - bottomArrowBitmap->mipSurfaces[v17]->format.height;
+            renderRect.height = bottomArrowBitmap->mipSurfaces[v17]->format.height;
+            stdDisplay_VBufferCopy(vbuf, bottomArrowBitmap->mipSurfaces[v17], v11 + (element_->rect.width - renderRect.width) / 2, v12 + v19 / 2, &renderRect, 1);
         }
     }
 }
 
 void jkGuiRend_CheckBoxDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vbuf, int redraw)
 {
-    stdBitmap *v4; // ebp
+    stdBitmap *checkboxBitmap; // ebp
     int v5; // eax
     stdVBuffer *v6; // ecx
     signed int v7; // eax
@@ -1485,8 +1499,8 @@ void jkGuiRend_CheckBoxDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *
 
     if ( redraw )
         jkGuiRend_CopyVBuffer(menu, &element->rect);
-    v4 = menu->ui_structs[menu->anonymous_3];
-    v6 = v4->mipSurfaces[(element->selectedTextEntry != 0) ? 1 : 0];
+    checkboxBitmap = menu->ui_structs[menu->checkboxBitmapIdx];
+    v6 = checkboxBitmap->mipSurfaces[(element->selectedTextEntry != 0) ? 1 : 0];
     v7 = (unsigned int)(element->rect.height - v6->format.height) / 2;
     if ( v7 < 0 )
         v7 = 0;
@@ -1503,7 +1517,7 @@ void jkGuiRend_CheckBoxDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *
         v14 = menu->lastMouseOverClickable;
         v15 = v6->format.width + 4;
         drawRect.width = v10 - v15;
-        v17 = element->field_8;
+        v17 = element->textType;
         drawRect.x = v15 + v9;
         stdFont_Draw3(vbuf, menu->fonts[v17 + (v14 == element)], element->rect.y, &drawRect, 2, element->wstr, 1);
     }
@@ -1597,9 +1611,9 @@ int jkGuiRend_WindowHandler(HWND hWnd, UINT a2, WPARAM wParam, LPARAM lParam, LR
         case WM_KEYFIRST:
             if ( wParam == VK_SHIFT || wParam == VK_LSHIFT || wParam == VK_RSHIFT )
                 jkGuiRend_bShiftDown = 1;
-            if ( wParam != VK_RETURN || (v8 = jkGuiRend_activeMenu->pReturnKeyShortcutElement) == 0 || v8->anonymous_9 || !v8->bIsVisible )
+            if ( wParam != VK_RETURN || (v8 = jkGuiRend_activeMenu->pReturnKeyShortcutElement) == 0 || v8->enableHover || !v8->bIsVisible )
             {
-                if ( wParam != VK_ESCAPE || (v8 = jkGuiRend_activeMenu->pEscapeKeyShortcutElement) == 0 || v8->anonymous_9 || !v8->bIsVisible )
+                if ( wParam != VK_ESCAPE || (v8 = jkGuiRend_activeMenu->pEscapeKeyShortcutElement) == 0 || v8->enableHover || !v8->bIsVisible )
                 {
                     if ( wParam == VK_TAB )  // TAB
                     {
@@ -1618,7 +1632,7 @@ LABEL_47:
                         jkGuiRend_InvokeEvent(jkGuiRend_activeMenu->focusedElement, jkGuiRend_activeMenu, JKGUI_EVENT_KEYDOWN, wParam);
                         return 0;
                     }
-                    while ( wParam != v8->clickShortcutScancode || v8->anonymous_9 || !v8->bIsVisible )
+                    while ( wParam != v8->clickShortcutScancode || v8->enableHover || !v8->bIsVisible )
                     {
                         ++v8;
                         if ( v8->type == ELEMENT_END )
@@ -1755,10 +1769,10 @@ int jkGuiRend_SliderEventHandler(jkGuiElement *element, jkGuiMenu *menu, int eve
     int v10; // ecx
     int v11; // ebx
     int v12; // edi
-    int *v13; // ebp
-    int v15; // ecx
-    stdBitmap *v16; // ecx
-    stdBitmap *v17; // edx
+    int *bitmapIdices; // ebp
+    int backgroundIdx; // ecx
+    stdBitmap *backgroundBitmap; // ecx
+    stdBitmap *sliderThumbBitmap; // edx
     unsigned int v18; // ecx
     int v19; // eax
     intptr_t v20; // ecx
@@ -1807,18 +1821,18 @@ int jkGuiRend_SliderEventHandler(jkGuiElement *element, jkGuiMenu *menu, int eve
                 v12 = element->rect.width;
                 if ( v33 != (uint8_t*)-44 )
                     eventParam = 0;
-                v13 = (int *)element->anonymous_13;
-                v15 = *v13;
-                v16 = menu->ui_structs[v15];
-                if ( v16 )
+                bitmapIdices = (int *)element->uiBitmaps;
+                backgroundIdx = *bitmapIdices;
+                backgroundBitmap = menu->ui_structs[backgroundIdx];
+                if ( backgroundBitmap )
                 {
-                    v12 = (*v16->mipSurfaces)->format.width;
+                    v12 = (*backgroundBitmap->mipSurfaces)->format.width;
                     v11 = (v9 - v12) / 2;
                 }
-                v17 = menu->ui_structs[v13[1]];
-                if ( v17 )
+                sliderThumbBitmap = menu->ui_structs[bitmapIdices[1]];
+                if ( sliderThumbBitmap )
                 {
-                    v18 = (*v17->mipSurfaces)->format.width;
+                    v18 = (*sliderThumbBitmap->mipSurfaces)->format.width;
                     v12 -= v18;
                     if ( v33 != (uint8_t*)-44 )
                     {
@@ -1906,10 +1920,10 @@ int jkGuiRend_SliderEventHandler(jkGuiElement *element, jkGuiMenu *menu, int eve
 void jkGuiRend_SliderDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vbuf, int redraw)
 {
     unsigned int v6; // edi
-    signed int *v7; // eax
-    signed int v8; // ebx
-    stdBitmap *v10; // ebx
-    stdBitmap *v11; // ebp
+    signed int *bitmapIndices; // eax
+    signed int sliderThumbIdx; // ebx
+    stdBitmap *sliderThumbBitmap; // ebx
+    stdBitmap *sliderBackgroundBitmap; // ebp
     int v12; // ebp
     int v13; // ebx
     int v14; // ebp
@@ -1927,11 +1941,11 @@ void jkGuiRend_SliderDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vb
     int v26; // ebp
     int v27; // ecx
     int v28; // ecx
-    uint32_t *v29; // edi
-    stdBitmap *v31; // edx
+    uint32_t *bitmapIndices2; // edi
+    stdBitmap *sliderBackgroundBitmap2; // edx
     int v32; // ecx
     int v33; // ebp
-    stdBitmap *v34; // ebx
+    stdBitmap *sliderThumbBitmap2; // ebx
     int v35; // eax
     unsigned int blitX2; // esi
     int blitY2; // edi
@@ -1960,14 +1974,14 @@ void jkGuiRend_SliderDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vb
     int redrawb; // [esp+7Ch] [ebp+10h]
 
     v6 = 0;
-    v7 = (signed int *)element->anonymous_13;
+    bitmapIndices = (signed int *)element->uiBitmaps;
     v43 = 0;
-    v8 = v7[1];
-    v10 = menu->ui_structs[v8];
-    v11 = menu->ui_structs[*v7];
-    v44 = v10;
-    elementa = menu->ui_structs[*v7];
-    if ( v10 && v11 )
+    sliderThumbIdx = bitmapIndices[1];
+    sliderThumbBitmap = menu->ui_structs[sliderThumbIdx];
+    sliderBackgroundBitmap = menu->ui_structs[*bitmapIndices];
+    v44 = sliderThumbBitmap;
+    elementa = menu->ui_structs[*bitmapIndices];
+    if ( sliderThumbBitmap && sliderBackgroundBitmap )
     {
         if ( element == menu->lastMouseOverClickable )
         {
@@ -1976,10 +1990,10 @@ void jkGuiRend_SliderDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vb
         }
         if ( redraw )
             jkGuiRend_CopyVBuffer(menu, &element->rect);
-        v12 = v11->numMips;
+        v12 = sliderBackgroundBitmap->numMips;
         if ( v6 > v12 - 1 )
             v6 = v12 - 1;
-        v13 = v10->numMips;
+        v13 = sliderThumbBitmap->numMips;
         if ( v43 > v13 - 1 )
             v43 = v13 - 1;
         v46 = v6;
@@ -2022,21 +2036,21 @@ void jkGuiRend_SliderDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vb
         drawRect.width = v56;
         drawRect.y = blitY - v54;
         stdDisplay_VBufferCopy(vbuf, elementa->mipSurfaces[v46], blitX, blitY, &drawRect, 1);
-        v29 = element->anonymous_13;
+        bitmapIndices2 = element->uiBitmaps;
         elementb = (jkGuiStringEntry *)element->selectedTextEntry;
-        v31 = menu->ui_structs[*v29];
+        sliderBackgroundBitmap2 = menu->ui_structs[*bitmapIndices2];
         v32 = 0;
         v33 = element->rect.width;
-        if ( v31 )
+        if ( sliderBackgroundBitmap2 )
         {
-            v33 = (*v31->mipSurfaces)->format.width;
+            v33 = (*sliderBackgroundBitmap2->mipSurfaces)->format.width;
             v32 = (element->rect.width - v33) / 2;
         }
-        v34 = menu->ui_structs[v29[1]];
-        if ( v34 )
+        sliderThumbBitmap2 = menu->ui_structs[bitmapIndices2[1]];
+        if ( sliderThumbBitmap2 )
         {
-            v33 -= (*v34->mipSurfaces)->format.width;
-            v32 += v34->xPos;
+            v33 -= (*sliderThumbBitmap2->mipSurfaces)->format.width;
+            v32 += sliderThumbBitmap2->xPos;
         }
         if ( (signed int)elementb < 0 )
         {
@@ -2105,7 +2119,7 @@ int jkGuiRend_TextBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
     if ( eventType == JKGUI_EVENT_INIT)
     {
         v25 = element;
-        v26 = menu->fonts[element->field_8];
+        v26 = menu->fonts[element->textType];
         if ( v26 )
         {
             v27 = (*v26->bitmap->mipSurfaces)->format.height + 3;
@@ -2192,7 +2206,7 @@ int jkGuiRend_TextBoxEventHandler(jkGuiElement *element, jkGuiMenu *menu, int ev
             }
         }
 
-        else if ( stdFont_sub_4355B0(menu->fonts[element->field_8], a4) )
+        else if ( stdFont_sub_4355B0(menu->fonts[element->textType], a4) )
         {
             v9 = v5->selectedTextEntry;
             if ( _wcslen((const wchar_t *)v7) < v9 - 1 )
@@ -2244,19 +2258,19 @@ void jkGuiRend_TextBoxDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *v
         element->texInfo.numTextEntries = element->texInfo.textHeight;
     v10 = element->texInfo.numTextEntries;
     v11 = &v4[v10];
-    if ( stdFont_sub_435810(menu->fonts[element->field_8], v11, element->texInfo.textHeight - v10 + 1) > element->rect.width - 6 )
+    if ( stdFont_sub_435810(menu->fonts[element->textType], v11, element->texInfo.textHeight - v10 + 1) > element->rect.width - 6 )
     {
         do
         {
             ++v11;
             v14 = element->texInfo.textHeight - element->texInfo.numTextEntries++;
         }
-        while ( stdFont_sub_435810(menu->fonts[element->field_8], v11, v14) > element->rect.width - 6 );
+        while ( stdFont_sub_435810(menu->fonts[element->textType], v11, v14) > element->rect.width - 6 );
     }
-    stdFont_Draw1(vbuf, menu->fonts[element->field_8], element->rect.x + 3, element->rect.y + 3, element->rect.width - 3, v11, 1);
+    stdFont_Draw1(vbuf, menu->fonts[element->textType], element->rect.x + 3, element->rect.y + 3, element->rect.width - 3, v11, 1);
     if ( menu->focusedElement == element )
     {
-        v15 = stdFont_sub_435810(menu->fonts[element->field_8], v11, element->texInfo.textHeight - element->texInfo.numTextEntries);
+        v15 = stdFont_sub_435810(menu->fonts[element->textType], v11, element->texInfo.textHeight - element->texInfo.numTextEntries);
         v16 = element->rect.y;
         v17 = element->rect.x;
         rect.x = element->rect.x + v15 + 3;
@@ -2266,7 +2280,7 @@ void jkGuiRend_TextBoxDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *v
         rect.width = 1;
         rect.height = v18 - 5;
         if ( rect.x + 1 < element->rect.width + v17 )
-            jkGuiRend_DrawRect(vbuf, &rect, menu->anonymous_1);
+            jkGuiRend_DrawRect(vbuf, &rect, menu->textBoxCursorColor);
     }
 }
 
@@ -2276,7 +2290,7 @@ void jkGuiRend_TextDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *outB
         jkGuiRend_CopyVBuffer(menu, &element->rect);
 
     if ( element->unistr )
-        stdFont_Draw3(outBuf, menu->fonts[element->field_8], element->rect.y, &element->rect, element->selectedTextEntry, element->wstr, 1);
+        stdFont_Draw3(outBuf, menu->fonts[element->textType], element->rect.y, &element->rect, element->selectedTextEntry, element->wstr, 1);
 }
 
 int jkGuiRend_PicButtonEventHandler(jkGuiElement *element, jkGuiMenu *menu, int a, int b)
@@ -2342,7 +2356,7 @@ int jkGuiRend_TextButtonEventHandler(jkGuiElement *element, jkGuiMenu *menu, int
     if ( eventType )
         return 0;
     v5 = 3;
-    v6 = &menu->fonts[element->field_8];
+    v6 = &menu->fonts[element->textType];
     do
     {
         if ( *v6 )
@@ -2373,5 +2387,5 @@ void jkGuiRend_TextButtonDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer
     v5 = element->selectedTextEntry;
     if ( redraw )
         jkGuiRend_CopyVBuffer(menu, &element->rect);
-    stdFont_Draw3(vbuf, menu->fonts[element->field_8 + v4], element->rect.y, &element->rect, v5, element->wstr, 1);
+    stdFont_Draw3(vbuf, menu->fonts[element->textType + v4], element->rect.y, &element->rect, v5, element->wstr, 1);
 }

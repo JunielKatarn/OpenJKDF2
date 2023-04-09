@@ -31,7 +31,7 @@
 #define stdSound_ParseWav_ADDR (0x0437770)
 #define stdSound_SetMenuSoundFormat_ADDR (0x0437890)
 
-#ifdef OPENAL_SOUND
+#ifdef STDSOUND_OPENAL
 //#include <AL/al.h>
 #ifdef ARCH_WASM
 #include <AL/al.h>
@@ -60,9 +60,11 @@ typedef struct stdALBuffer
 #else
 typedef struct IDirectSoundBuffer
 {
+    void* p;
 } IDirectSoundBuffer;
 typedef struct IDirectSound3DBuffer
 {
+    void* p;
 } IDirectSound3DBuffer;
 #endif
 

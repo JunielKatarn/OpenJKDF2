@@ -779,7 +779,7 @@ void sithWorld_sub_4D0A20(sithWorld *world)
             sithSurface* surface = &world->sectors[i].surfaces[j];
             surface->field_4 = 0;
         }
-        sector->field_8C = 0;
+        sector->renderTick = 0;
     }
 }
 
@@ -860,7 +860,7 @@ void sithWorld_GetMemorySize(sithWorld *world, int *outAllocated, int *outQuanti
         outAllocated[11] += sizeof(rdJoint) * (world->keyframes[i].numJoints2 + 3);
         for (int j = 0; j < world->keyframes[i].numJoints2; j++)
         {
-            outAllocated[11] += sizeof(rdAnimEntry) * world->keyframes[i].joints[j].numAnimEntries;
+            outAllocated[11] += sizeof(rdAnimEntry) * world->keyframes[i].paJoints[j].numAnimEntries;
         }
     }
     outQuantity[12] = world->numAnimClassesLoaded;

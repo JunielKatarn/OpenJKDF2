@@ -57,6 +57,10 @@ float jkPlayer_crosshairLineWidth = 1.0;
 float jkPlayer_crosshairScale = 1.0;
 float jkPlayer_canonicalCogTickrate = CANONICAL_COG_TICKRATE;
 float jkPlayer_canonicalPhysTickrate = CANONICAL_PHYS_TICKRATE;
+
+int jkPlayer_setCrosshairOnLightsaber = 1;
+int jkPlayer_setCrosshairOnFist = 1;
+int jkPlayer_bHasLoadedSettingsOnce = 0;
 #endif
 
 #ifdef FIXED_TIMESTEP_PHYS
@@ -172,6 +176,8 @@ void jkPlayer_StartupVars()
     sithCvar_RegisterFlex("hud_scale",                  2.0,                        &jkPlayer_hudScale,                 CVARFLAG_LOCAL|CVARFLAG_RESETHUD);
     sithCvar_RegisterFlex("hud_crosshairLineWidth",     1.0,                        &jkPlayer_crosshairLineWidth,       CVARFLAG_LOCAL|CVARFLAG_RESETHUD);
     sithCvar_RegisterFlex("hud_crosshairScale",         1.0,                        &jkPlayer_crosshairScale,           CVARFLAG_LOCAL|CVARFLAG_RESETHUD);
+    sithCvar_RegisterBool("hud_setCrosshairOnLightsaber", 1,                        &jkPlayer_setCrosshairOnLightsaber, CVARFLAG_LOCAL);
+    sithCvar_RegisterBool("hud_setCrosshairOnFist",     1,                          &jkPlayer_setCrosshairOnFist,       CVARFLAG_LOCAL);
     sithCvar_RegisterFlex("g_canonicalCogTickrate",     CANONICAL_COG_TICKRATE,     &jkPlayer_canonicalCogTickrate,     CVARFLAG_LOCAL);
     sithCvar_RegisterFlex("g_canonicalPhysTickrate",    CANONICAL_PHYS_TICKRATE,    &jkPlayer_canonicalPhysTickrate,    CVARFLAG_LOCAL);
 
@@ -179,7 +185,7 @@ void jkPlayer_StartupVars()
     sithCvar_RegisterBool("r_fullscreen",                0,                         &Window_isFullscreen_tmp,           CVARFLAG_LOCAL|CVARFLAG_READONLY);
 
 #ifdef FIXED_TIMESTEP_PHYS
-    sithCvar_RegisterBool("g_bJankyPhysics",             1,                         &jkPlayer_bJankyPhysics,            CVARFLAG_LOCAL);
+    sithCvar_RegisterBool("g_bJankyPhysics",             0,                         &jkPlayer_bJankyPhysics,            CVARFLAG_LOCAL);
 #endif
 }
 
@@ -209,6 +215,11 @@ void jkPlayer_ResetVars()
     jkPlayer_crosshairScale = 1.0;
     jkPlayer_canonicalCogTickrate = CANONICAL_COG_TICKRATE;
     jkPlayer_canonicalPhysTickrate = CANONICAL_PHYS_TICKRATE;
+
+    jkPlayer_setCrosshairOnLightsaber = 1;
+    jkPlayer_setCrosshairOnFist = 1;
+
+    jkPlayer_bHasLoadedSettingsOnce = 0;
 #endif
 
 #ifdef FIXED_TIMESTEP_PHYS
@@ -547,6 +558,9 @@ void jkPlayer_WriteConf(wchar_t *name)
         stdJSON_SaveFloat(ext_fpath, "canonicalPhysTickrate", jkPlayer_canonicalPhysTickrate);
 
         stdJSON_SaveBool(ext_fpath, "bUseOldPlayerPhysics", jkPlayer_bUseOldPlayerPhysics);
+
+        stdJSON_SaveBool(ext_fpath, "setCrosshairOnLightsaber", jkPlayer_setCrosshairOnLightsaber);
+        stdJSON_SaveBool(ext_fpath, "setCrosshairOnFist", jkPlayer_setCrosshairOnFist);
 #endif
 #ifdef FIXED_TIMESTEP_PHYS
         stdJSON_SaveBool(ext_fpath, "bJankyPhysics", jkPlayer_bJankyPhysics);
@@ -729,6 +743,9 @@ int jkPlayer_ReadConf(wchar_t *name)
 
         jkPlayer_bUseOldPlayerPhysics = stdJSON_GetBool(ext_fpath, "bUseOldPlayerPhysics", jkPlayer_bUseOldPlayerPhysics);
 
+        jkPlayer_setCrosshairOnLightsaber = stdJSON_GetBool(ext_fpath, "setCrosshairOnLightsaber", jkPlayer_setCrosshairOnLightsaber);
+        jkPlayer_setCrosshairOnFist = stdJSON_GetBool(ext_fpath, "setCrosshairOnFist", jkPlayer_setCrosshairOnFist);
+
 #endif
 #ifdef FIXED_TIMESTEP_PHYS
         jkPlayer_bJankyPhysics = stdJSON_GetBool(ext_fpath, "bJankyPhysics", jkPlayer_bJankyPhysics);
@@ -746,6 +763,8 @@ int jkPlayer_ReadConf(wchar_t *name)
         Window_SetFullscreen(Window_isFullscreen_tmp);
 
         std3D_UpdateSettings();
+
+        jkPlayer_bHasLoadedSettingsOnce = 1;
 #endif
         
         stdConffile_Close();

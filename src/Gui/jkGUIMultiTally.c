@@ -208,7 +208,7 @@ int jkGuiMultiTally_Show(int a1)
         if ( result == -1 )
             return result;
     }
-    jkGui_SetModeMenu(jkGui_stdBitmaps[10]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]->palette);
     jkGuiMultiTally_buttons[1].wstr = jkGui_sub_412ED0();
     jkGuiRend_MenuSetReturnKeyShortcutElement(&jkGuiMultiTally_menu, &jkGuiMultiTally_buttons[90]);
     jkGuiRend_MenuSetEscapeKeyShortcutElement(&jkGuiMultiTally_menu, &jkGuiMultiTally_buttons[89]);
@@ -256,19 +256,19 @@ int jkGuiMultiTally_Show(int a1)
             {
                 if ( pPlayerInfoIter->net_id == jkPlayer_playerInfos[playerThingIdx].net_id )
                 {
-                    pElementIter[-16].field_8 = 1;
-                    pElementIter->field_8 = 1;
-                    pElementIter[16].field_8 = 1;
-                    pElementIter[32].field_8 = 1;
-                    pElementIter[48].field_8 = 1;
+                    pElementIter[-16].textType = 1;
+                    pElementIter->textType = 1;
+                    pElementIter[16].textType = 1;
+                    pElementIter[32].textType = 1;
+                    pElementIter[48].textType = 1;
                 }
                 else
                 {
-                    pElementIter[-16].field_8 = 0;
-                    pElementIter->field_8 = 0;
-                    pElementIter[16].field_8 = 0;
-                    pElementIter[32].field_8 = 0;
-                    pElementIter[48].field_8 = 0;
+                    pElementIter[-16].textType = 0;
+                    pElementIter->textType = 0;
+                    pElementIter[16].textType = 0;
+                    pElementIter[32].textType = 0;
+                    pElementIter[48].textType = 0;
                 }
                 jk_snwprintf(&wtmp2[v8], 0x20u, L"%ls", pPlayerInfoIter);
                 v9 = pPlayerInfoIter->score;
@@ -318,7 +318,7 @@ int jkGuiMultiTally_Show(int a1)
         while ( v14 < &jkGuiMultiTally_buttons[39] );
     }
     if ( v2 > 0x10 )
-        jkGuiMultiTally_buttons[87].wstr = jkStrings_GetText("GUI_PAGE1");
+        jkGuiMultiTally_buttons[87].wstr = jkStrings_GetUniStringWithFallback("GUI_PAGE1");
     do
     {
         v15 = 1;
@@ -326,8 +326,8 @@ int jkGuiMultiTally_Show(int a1)
         v17 = v16;
         if ( v16 == -1 )
         {
-            v31 = jkStrings_GetText("GUI_CONFIRM_ABORT");
-            v18 = jkStrings_GetText("GUI_ABORT_GAME");
+            v31 = jkStrings_GetUniStringWithFallback("GUI_CONFIRM_ABORT");
+            v18 = jkStrings_GetUniStringWithFallback("GUI_ABORT_GAME");
             if ( !jkGuiDialog_YesNoDialog(v18, v31) )
                 continue;
         }
@@ -397,7 +397,7 @@ int jkGuiMultiTally_Show(int a1)
             }
             while ( v27 < &jkGuiMultiTally_buttons[39] );
         }
-        jkGuiMultiTally_buttons[87].wstr = jkStrings_GetText("GUI_PAGE2");
+        jkGuiMultiTally_buttons[87].wstr = jkStrings_GetUniStringWithFallback("GUI_PAGE2");
         do
         {
             v28 = 1;
@@ -405,8 +405,8 @@ int jkGuiMultiTally_Show(int a1)
             v17 = v29;
             if ( v29 == -1 )
             {
-                v32 = jkStrings_GetText("GUI_CONFIRM_ABORT");
-                v30 = jkStrings_GetText("GUI_ABORT_GAME");
+                v32 = jkStrings_GetUniStringWithFallback("GUI_CONFIRM_ABORT");
+                v30 = jkStrings_GetUniStringWithFallback("GUI_ABORT_GAME");
                 if ( jkGuiDialog_YesNoDialog(v30, v32) )
                 {
 LABEL_50:
@@ -468,9 +468,9 @@ int jkGuiMultiTally_SortPlayerScore(const sithPlayerInfo *pA, const sithPlayerIn
 
 void jkGuiMultiTally_Startup()
 {
-    jkGui_InitMenu(&jkGuiMultiTally_menu, jkGui_stdBitmaps[10]);
-    jkGui_InitMenu(&jkGuiMultiTally_menu2, jkGui_stdBitmaps[10]);
-    jkGui_InitMenu(&jkGuiMultiTally_menu3, jkGui_stdBitmaps[10]);
+    jkGui_InitMenu(&jkGuiMultiTally_menu, jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]);
+    jkGui_InitMenu(&jkGuiMultiTally_menu2, jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]);
+    jkGui_InitMenu(&jkGuiMultiTally_menu3, jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]);
 }
 
 void jkGuiMultiTally_Shutdown()
@@ -530,7 +530,7 @@ int jkGuiMultiTally_ShowTeamScores(int a1)
     jkGuiMultiTally_msStart = stdPlatform_GetTimeMsec();
     jkGuiMultiTally_idkType = a1;
     jkGuiMultiTally_dword_5568D0 = 0;
-    jkGui_SetModeMenu(jkGui_stdBitmaps[10]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_TALLY]->palette);
     jkGuiRend_SetVisibleAndDraw(&jkGuiMultiTally_buttons3[15], &jkGuiMultiTally_menu3, a1); // MOTS removed?
     jkGuiMultiTally_buttons3[1].wstr = jkGui_sub_412ED0();
     jkGuiRend_MenuSetReturnKeyShortcutElement(&jkGuiMultiTally_menu3, &jkGuiMultiTally_buttons3[16]);
@@ -556,7 +556,7 @@ int jkGuiMultiTally_ShowTeamScores(int a1)
 
     _qsort(aTmpTeamScores, 5u, sizeof(jkHudTeamScore), jkGuiMultiTally_SortTeamScore);
     pElementIter = &jkGuiMultiTally_buttons3[4];
-    v9 = &v19;
+    v9 = v19;
     v10 = aTmpTeamScores;
     do
     {
@@ -565,19 +565,19 @@ int jkGuiMultiTally_ShowTeamScores(int a1)
             switch ( v10->field_0 )
             {
                 case 1:
-                    v11 = jkStrings_GetText("GUI_RED");
+                    v11 = jkStrings_GetUniStringWithFallback("GUI_RED");
                     break;
                 case 2:
-                    v11 = jkStrings_GetText("GUI_GOLD");
+                    v11 = jkStrings_GetUniStringWithFallback("GUI_GOLD");
                     break;
                 case 3:
-                    v11 = jkStrings_GetText("GUI_BLUE");
+                    v11 = jkStrings_GetUniStringWithFallback("GUI_BLUE");
                     break;
                 case 4:
-                    v11 = jkStrings_GetText("GUI_GREEN");
+                    v11 = jkStrings_GetUniStringWithFallback("GUI_GREEN");
                     break;
                 default:
-                    v11 = jkStrings_GetText("GUI_NONE");
+                    v11 = jkStrings_GetUniStringWithFallback("GUI_NONE");
                     break;
             }
             pElementIter->wstr = v11;
@@ -601,8 +601,8 @@ int jkGuiMultiTally_ShowTeamScores(int a1)
         v14 = v13;
         if ( v13 == -1 )
         {
-            v17 = jkStrings_GetText("GUI_CONFIRM_ABORT");
-            v15 = jkStrings_GetText("GUI_ABORT_GAME");
+            v17 = jkStrings_GetUniStringWithFallback("GUI_CONFIRM_ABORT");
+            v15 = jkStrings_GetUniStringWithFallback("GUI_ABORT_GAME");
             if ( !jkGuiDialog_YesNoDialog(v15, v17) )
                 continue;
         }

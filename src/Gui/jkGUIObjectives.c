@@ -33,7 +33,7 @@ void jkGuiObjectives_CustomRender(jkGuiElement *element, jkGuiMenu *menu, stdVBu
 {
     signed int v6; // esi
     int v7; // ebp
-    int v8; // eax
+    int textType; // eax
     int v9; // ecx
     stdFont **v10; // edx
     int v11; // ebp
@@ -60,25 +60,25 @@ void jkGuiObjectives_CustomRender(jkGuiElement *element, jkGuiMenu *menu, stdVBu
             v16 = a4a->str;
             if ( a4a->str )
             {
-                v8 = element->field_8;
+                textType = element->textType;
                 ++v14;
                 v9 = element->rect.x + 30;
                 drawRect.width = element->rect.width - 30;
                 v10 = menu->fonts;
                 drawRect.x = v9;
                 drawRect.y = v6;
-                drawRect.height = v7 + (*v10[v8]->bitmap->mipSurfaces)->format.height;
+                drawRect.height = v7 + (*v10[textType]->bitmap->mipSurfaces)->format.height;
                 v11 = (uint8_t)(v15 & 4 | 0x10) >> 1;
                 stdFont_Draw2(vbuf, v10[v11], v9, v6, &drawRect, v16, 1);
                 v12 = stdFont_sub_4357C0(menu->fonts[v11], a4a->str, &drawRect);
                 stdDisplay_VBufferCopy(
                     vbuf,
-                    jkGui_stdBitmaps[16]->mipSurfaces[(uint8_t)(v15 & 2) >> 1],
+                    jkGui_stdBitmaps[JKGUI_BM_OBJECTIVESCHECK]->mipSurfaces[(uint8_t)(v15 & 2) >> 1],
                     element->rect.x,
-                    v6 + ((unsigned int)(v12 - (*jkGui_stdBitmaps[16]->mipSurfaces)->format.height) >> 1),
+                    v6 + ((unsigned int)(v12 - (*jkGui_stdBitmaps[JKGUI_BM_OBJECTIVESCHECK]->mipSurfaces)->format.height) >> 1),
                     0,
                     1);
-                v7 = (*menu->fonts[element->field_8]->bitmap->mipSurfaces)->format.height + v12;
+                v7 = (*menu->fonts[element->textType]->bitmap->mipSurfaces)->format.height + v12;
                 v6 += v7;
             }
         }
@@ -86,8 +86,8 @@ void jkGuiObjectives_CustomRender(jkGuiElement *element, jkGuiMenu *menu, stdVBu
 
     if ( !v14 )
     {
-        v13 = jkStrings_GetText("GUI_NO_OBJECTIVES");
-        stdFont_Draw1(vbuf, menu->fonts[element->field_8], element->rect.x + 30, element->rect.y, element->rect.width, v13, 1);
+        v13 = jkStrings_GetUniStringWithFallback("GUI_NO_OBJECTIVES");
+        stdFont_Draw1(vbuf, menu->fonts[element->textType], element->rect.x + 30, element->rect.y, element->rect.width, v13, 1);
     }
 }
 
@@ -113,6 +113,13 @@ int jkGuiObjectives_Show()
         {
             v2 = &jkGuiObjectives_aTexts[v1];
             stdString_snprintf(key, 64, "GOAL_%05d", v0 + v1);
+
+            // Added: Allow openjkdf2_i8n.uni to override everything
+#ifdef QOL_IMPROVEMENTS
+            v3 = stdStrTable_GetUniString(&jkStrings_tableExtOver, key);
+            if ( !v3 )
+#endif
+
             v3 = stdStrTable_GetUniString(&jkCog_strings, key);
             if ( v3 )
                 v2->str = v3;
@@ -122,13 +129,13 @@ int jkGuiObjectives_Show()
     v5 = sithPlayer_GetBinAmt(SITHBIN_MAXSECRETS);
     if ( (int)(__int64)v5 <= 0 )
     {
-        v9 = jkStrings_GetText("GUI_NO_SECRETS");
-        v7 = jkStrings_GetText("GUI_SECRETS_FOUND");
+        v9 = jkStrings_GetUniStringWithFallback("GUI_NO_SECRETS");
+        v7 = jkStrings_GetUniStringWithFallback("GUI_SECRETS_FOUND");
         jk_snwprintf(v10, 0x20u, L"%ls %ls", v7, v9);
     }
     else
     {
-        v6 = jkStrings_GetText("GUI_SECRETS_FOUND");
+        v6 = jkStrings_GetUniStringWithFallback("GUI_SECRETS_FOUND");
         jk_snwprintf(v10, 0x20u, L"%ls %d/%d", v6, v4, (unsigned int)(__int64)v5);
     }
     jkGuiObjectives_elements[3].wstr = v10;
@@ -138,7 +145,7 @@ int jkGuiObjectives_Show()
 
 void jkGuiObjectives_Startup()
 {
-    jkGui_InitMenu(&jkGuiObjectives_menu, jkGui_stdBitmaps[6]);
+    jkGui_InitMenu(&jkGuiObjectives_menu, jkGui_stdBitmaps[JKGUI_BM_BK_FIELD_LOG]);
 }
 
 void jkGuiObjectives_Shutdown()

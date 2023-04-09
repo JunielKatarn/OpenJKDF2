@@ -1,21 +1,21 @@
 cmake_minimum_required(VERSION 3.20)
 
 if(PLAT_MACOS_X86_64)
-set(CMAKE_OSX_ARCHITECTURES "x86_64")
+    set(CMAKE_OSX_ARCHITECTURES "x86_64")
 
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(SDL2_DIR "/usr/local/opt/sdl2")
-set(SDL2_MIXER_PATH "/usr/local/opt/sdl2_mixer")
-set(GLEW_PATH "/usr/local/opt/glew")
-set(CMAKE_IGNORE_PATH "/opt/homebrew")
-set(CMAKE_IGNORE_PATH "/opt/homebrew/include")
-set(CMAKE_IGNORE_PATH "/opt/homebrew/lib")
+    set(SDL2_DIR "/usr/local/opt/sdl2")
+    set(SDL2_MIXER_PATH "/usr/local/opt/sdl2_mixer")
+    set(GLEW_PATH "/usr/local/opt/glew")
+    set(CMAKE_IGNORE_PATH "/opt/homebrew")
+    set(CMAKE_IGNORE_PATH "/opt/homebrew/include")
+    set(CMAKE_IGNORE_PATH "/opt/homebrew/lib")
 
-list(APPEND CMAKE_PREFIX_PATH /usr/local)
+    list(APPEND CMAKE_PREFIX_PATH /usr/local)
 endif()
 
 project(OpenJKDF2)
@@ -29,6 +29,7 @@ set(PLAT_MINGW_X86_64 FALSE CACHE BOOL "MinGW Win64 target")
 set(PLAT_WASM FALSE CACHE BOOL "Emscripten WASM target")
 set(PLAT_HOOKS FALSE CACHE BOOL "Hook DLL target")
 set(PLAT_MSVC FALSE CACHE BOOL "Windows 64-bit MSVC")
+set(PLAT_ANDROID_ARM64 FALSE CACHE BOOL "Android AArch64")
 set(PLAT_AUTO FALSE CACHE BOOL "Target the host OS")
 
 # Set PLAT_AUTO if a platform isn't specifically selected
@@ -44,12 +45,16 @@ set(TARGET_USE_LIBSMACKER FALSE)
 set(TARGET_USE_LIBSMUSHER FALSE)
 set(TARGET_USE_SDL2 FALSE)
 set(TARGET_USE_OPENGL FALSE)
+set(TARGET_USE_OPENAL FALSE)
 set(TARGET_USE_D3D FALSE)
 set(TARGET_POSIX FALSE)
 set(TARGET_LINUX FALSE)
 set(TARGET_MACOS FALSE)
 set(TARGET_WIN32 FALSE)
 set(TARGET_WASM FALSE)
+set(TARGET_ANDROID FALSE)
+set(TARGET_ANDROID_ARM64 FALSE)
+set(TARGET_HOOKS FALSE)
 set(TARGET_NO_BLOBS FALSE)
 set(OPENJKDF2_USE_BLOBS FALSE CACHE BOOL "Use blobs")
 
@@ -62,8 +67,6 @@ else()
     set(OPENJKDF2_NO_ASAN TRUE)
 endif()
 
-message( STATUS "${PLAT_MINGW_X86_64}")
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND PLAT_AUTO)
     set(PLAT_LINUX_64 TRUE)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND PLAT_AUTO)
@@ -72,12 +75,13 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows" AND PLAT_AUTO)
     set(PLAT_MSVC TRUE)
 endif()
 
+# General defs
 add_definitions(-DOPENJKDF2_RELEASE_COMMIT="$ENV{OPENJKDF2_RELEASE_COMMIT}")
 add_definitions(-DOPENJKDF2_RELEASE_COMMIT_SHORT="$ENV{OPENJKDF2_RELEASE_COMMIT_SHORT}")
 add_definitions(-DOPENJKDF2_RELEASE_COMMIT_W=L"$ENV{OPENJKDF2_RELEASE_COMMIT}")
 add_definitions(-DOPENJKDF2_RELEASE_COMMIT_SHORT_W=L"$ENV{OPENJKDF2_RELEASE_COMMIT_SHORT}")
-
 add_definitions(-DQOL_IMPROVEMENTS)
+
 set(CMAKE_CXX_STANDARD 17)
 
 if(PLAT_LINUX_32)
@@ -93,18 +97,20 @@ if(PLAT_LINUX_32)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_LINUX TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
     set(OPENJKDF2_NO_ASAN TRUE)
+    set(TARGET_USE_CURL TRUE)
 
     if(OPENJKDF2_USE_BLOBS)
         set(TARGET_NO_BLOBS FALSE)
     endif()
     
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -fshort-wchar")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -fshort-wchar -Wno-implicit-function-declaration")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar -Wno-implicit-function-declaration")
     add_link_options(-fshort-wchar)
 
 elseif(PLAT_LINUX_64)
@@ -121,14 +127,16 @@ elseif(PLAT_LINUX_64)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_LINUX TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
     set(OPENJKDF2_NO_ASAN TRUE)
+    set(TARGET_USE_CURL TRUE)
     
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -fshort-wchar")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -fshort-wchar -Wno-implicit-function-declaration")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar -Wno-implicit-function-declaration")
     add_link_options(-fshort-wchar)
 
 elseif(PLAT_MACOS)
@@ -147,15 +155,17 @@ elseif(PLAT_MACOS)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_MACOS TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
+    set(TARGET_USE_CURL TRUE)
 
     set(BUNDLE "${PROJECT_SOURCE_DIR}/OpenJKDF2.app")
     set(HOMEBREW_PREFIX "/usr/local")
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces -Wno-implicit-function-declaration")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")
     
     add_link_options(-fshort-wchar -Wl,-map,openjkdf2.map)
@@ -175,15 +185,17 @@ elseif(PLAT_MACOS_X86_64)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_MACOS TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
+    set(TARGET_USE_CURL TRUE)
 
     set(BUNDLE "${PROJECT_SOURCE_DIR}/OpenJKDF2_x86_64.app")
     set(HOMEBREW_PREFIX "/usr/local")
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces -Wno-implicit-function-declaration")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")
     add_link_options(-fshort-wchar)
 
@@ -209,13 +221,15 @@ elseif(PLAT_MINGW_X86_64)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_WIN32 TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
+    set(TARGET_USE_CURL TRUE)
 
     # TODO: Bump to O2 eventually. MinGW likes to replace memset with calls to itself...
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -ggdb -fno-omit-frame-pointer")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -ggdb -fno-omit-frame-pointer -Wno-implicit-function-declaration")
     
     add_link_options(-Wl,-Map=output-win64.map -fno-trapping-math -fshort-wchar -D_MBCS)
     add_compile_options(-Wuninitialized -fno-trapping-math -fshort-wchar -Dmain=SDL_main -D_MBCS -static -pthread)
@@ -242,10 +256,12 @@ elseif(PLAT_WASM)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_WASM TRUE)
     set(TARGET_CAN_JKGM FALSE)
+    set(TARGET_USE_CURL FALSE)
 
     add_link_options(-fno-exceptions)
     add_compile_options(-fno-exceptions)
@@ -254,8 +270,6 @@ elseif(PLAT_WASM)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} --profiling --preload-file ${PROJECT_SOURCE_DIR}/wasm_out@/ ")
     set(CMAKE_EXECUTABLE_SUFFIX .js)
-
-    #LDFLAGS += -g -O2  -fshort-wchar
 
     add_compile_options(-O2 -Wuninitialized -fshort-wchar -Wall -Wno-unused-variable -Wno-parentheses -Wno-missing-braces)
 
@@ -269,12 +283,44 @@ elseif(PLAT_HOOKS)
     add_definitions(-DARCH_X86)
     add_definitions(-DTARGET_HAS_DPLAY)
 
-    add_compile_options(-g -Wuninitialized -fno-trapping-math)
-    add_link_options(-g -Wl,--subsystem,windows -Wl,-Map=output.map -fno-trapping-math)
-
+    set(TARGET_HOOKS TRUE)
     set(OPENJKDF2_NO_ASAN TRUE)
     set(TARGET_WIN32 TRUE)
     set(TARGET_USE_D3D TRUE)
+
+    add_compile_options(-g -Wuninitialized -fno-trapping-math)
+    add_link_options(-g -Wl,--subsystem,windows -Wl,-Map=output.map -fno-trapping-math)
+elseif(PLAT_ANDROID_ARM64)
+    message( STATUS "Targeting Android ARM64" )
+
+    set(BIN_NAME "openjkdf2-armv8a")
+
+    add_definitions(-DTARGET_ANDROID)
+    add_definitions(-DLINUX)
+    add_definitions(-DSTDSOUND_NULL)
+
+    set(TARGET_USE_PHYSFS FALSE)
+    set(OPENJKDF2_NO_ASAN TRUE)
+    set(TARGET_USE_LIBSMACKER TRUE)
+    set(TARGET_USE_LIBSMUSHER TRUE)
+    set(TARGET_USE_SDL2 TRUE)
+    set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL FALSE)
+    set(TARGET_POSIX TRUE)
+    set(TARGET_NO_BLOBS TRUE)
+    set(TARGET_ANDROID TRUE)
+    set(TARGET_ANDROID_ARM64 TRUE)
+    set(TARGET_CAN_JKGM FALSE)
+    set(TARGET_USE_CURL FALSE)
+
+    list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/3rdparty/glew")
+    include_directories(${PROJECT_SOURCE_DIR}/3rdparty/freeglut/include)
+    include_directories(${PROJECT_SOURCE_DIR}/3rdparty/glew/include)
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c11 -fshort-wchar -Wno-implicit-function-declaration")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fshort-wchar")
+    add_link_options(-fshort-wchar)
+
 elseif(PLAT_MSVC)
     message( STATUS "Targeting Win64 MSVC" )
 
@@ -292,10 +338,12 @@ elseif(PLAT_MSVC)
     set(TARGET_USE_LIBSMUSHER TRUE)
     set(TARGET_USE_SDL2 TRUE)
     set(TARGET_USE_OPENGL TRUE)
+    set(TARGET_USE_OPENAL TRUE)
     set(TARGET_POSIX TRUE)
     set(TARGET_WIN32 TRUE)
     set(TARGET_NO_BLOBS TRUE)
     set(TARGET_CAN_JKGM TRUE)
+    set(TARGET_USE_CURL FALSE)
 	
 	set(SDL2_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SDL2-2.24.0)
 	set(SDL2_MIXER_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SDL2_mixer-2.6.2)
@@ -325,24 +373,28 @@ endif()
 
 set(CMAKE_BUILD_TYPE Debug)
 
+# CMake module paths
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules")
-
-if(TARGET_LINUX)
+if(TARGET_LINUX OR TARGET_MACOS OR PLAT_MSVC OR TARGET_ANDROID)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules_linux")
 endif()
 
-if(TARGET_MACOS)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules_linux")
-endif()
-
-if(PLAT_MSVC)
-	list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules_linux")
-endif()
-
-if(NOT PLAT_MINGW_X86_64 AND NOT PLAT_HOOKS AND NOT PLAT_WASM)
+if(TARGET_ANDROID)
     find_package(SDL2 REQUIRED)
     find_package(SDL2_mixer REQUIRED)
-    find_package(OpenAL REQUIRED)
+    #find_package(OpenAL REQUIRED)
+    #find_package(GLEW 2.0 REQUIRED)
+
+    set(OPENAL_INCLUDE_DIR "")
+    set(GLEW_INCLUDE_DIRS "")
+    set(JSON_Install OFF CACHE INTERNAL "")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/json)
+elseif(NOT PLAT_MINGW_X86_64 AND NOT TARGET_HOOKS AND NOT TARGET_WASM)
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+    if(TARGET_USE_OPENAL)
+        find_package(OpenAL REQUIRED)
+    endif()
     find_package(GLEW 2.0 REQUIRED)
 
     set(JSON_Install OFF CACHE INTERNAL "")
@@ -354,165 +406,36 @@ else()
 endif()
 
 # All of the includes
-include_directories(${PROJECT_SOURCE_DIR}/src  ${PROJECT_SOURCE_DIR}/src/external/libsmacker ${PROJECT_SOURCE_DIR}/src/external/libsmusher/src ${PROJECT_SOURCE_DIR}/src/external/nativefiledialog-extended ${OPENAL_INCLUDE_DIR} ${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
+include_directories(${PROJECT_SOURCE_DIR}/src  ${PROJECT_SOURCE_DIR}/src/external/libsmacker ${PROJECT_SOURCE_DIR}/src/external/libsmusher/src ${PROJECT_SOURCE_DIR}/src/external/nativefiledialog-extended ${GLEW_INCLUDE_DIRS})
+
+if(TARGET_USE_SDL2)
+    include_directories(${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
+endif()
+
+if(TARGET_USE_OPENAL)
+    include_directories(${OPENAL_INCLUDE_DIR})
+endif()
 
 # All of the base sources
-file(GLOB SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*/*.c ${PROJECT_SOURCE_DIR}/src/General/*.cpp ${PROJECT_SOURCE_DIR}/src/Platform/Common/*.c)
+file(GLOB SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/*.c ${PROJECT_SOURCE_DIR}/src/*/*.c ${PROJECT_SOURCE_DIR}/src/General/*.cpp ${PROJECT_SOURCE_DIR}/src/Platform/Common/*.c ${PROJECT_SOURCE_DIR}/src/Platform/Common/*.cpp)
 
 # Fcaseopen
 file(GLOB FCASEOPEN_SRCS ${PROJECT_SOURCE_DIR}/src/external/fcaseopen/*.c)
 list(APPEND SOURCE_FILES ${FCASEOPEN_SRCS})
 include_directories(${PROJECT_SOURCE_DIR}/src/external/fcaseopen)
 
-if(TARGET_NO_BLOBS)
-    add_definitions(-DLINUX_TMP)
-    add_definitions(-DNO_JK_MMAP)
-endif()
+# The rest of the conditional/TARGET_* dependencies
+include(cmake_modules/config_platform_deps.cmake)
 
-if(DEBUG_QOL_CHEATS)
-    add_definitions(-DDEBUG_QOL_CHEATS)
-endif()
-
-if(TARGET_USE_PHYSFS)
-    include_directories(${PROJECT_SOURCE_DIR}/3rdparty/physfs/src)
-    add_definitions(-DPLATFORM_PHYSFS)
-endif()
-
-if (NOT TARGET_USE_BASICSOCKETS AND NOT TARGET_USE_GAMENETWORKINGSOCKETS)
-    set(TARGET_USE_NOSOCKETS TRUE)
-endif()
-
-if(TARGET_USE_GAMENETWORKINGSOCKETS)
-    file(GLOB TARGET_GNS_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/Networking/GNS/*.cpp)
-    list(APPEND SOURCE_FILES ${TARGET_GNS_SRCS})
-
-    add_definitions(-DPLATFORM_GNS)
-endif()
-
-if(TARGET_USE_BASICSOCKETS)
-    file(GLOB TARGET_BASIC_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/Networking/Basic/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_BASIC_SRCS})
-
-    add_definitions(-DPLATFORM_BASICSOCKETS)
-endif()
-
-if(TARGET_USE_NOSOCKETS AND NOT PLAT_HOOKS)
-    file(GLOB TARGET_NOSOCK_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/Networking/None/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_NOSOCK_SRCS})
-
-    add_definitions(-DPLATFORM_NOSOCKETS)
-endif()
-
-if(TARGET_USE_LIBSMACKER)
-    list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/external/libsmacker/smacker.c ${PROJECT_SOURCE_DIR}/src/external/libsmacker/smk_bitstream.c ${PROJECT_SOURCE_DIR}/src/external/libsmacker/smk_hufftree.c)
-endif()
-
-if(TARGET_USE_LIBSMUSHER)
-    list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/external/libsmusher/src/smush.c ${PROJECT_SOURCE_DIR}/src/external/libsmusher/src/codec48.c)
-endif()
-
-if(TARGET_USE_SDL2)
-    file(GLOB TARGET_SDL2_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/SDL2/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_SDL2_SRCS})
-    add_definitions(-DSDL2_RENDER)
-    add_definitions(-DOPENAL_SOUND)
-endif()
-
-if(TARGET_USE_OPENGL)
-    file(GLOB TARGET_GL_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/GL/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_GL_SRCS})
-
-    file(GLOB TARGET_GL_CPP_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/GL/*.cpp)
-    list(APPEND SOURCE_FILES ${TARGET_GL_CPP_SRCS})
-endif()
-
-if(TARGET_USE_D3D)
-    file(GLOB TARGET_D3D_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/D3D/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_D3D_SRCS})
-endif()
-
-if(TARGET_POSIX)
-    file(GLOB TARGET_POSIX_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/Posix/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_POSIX_SRCS})
-
-    add_definitions(-DPLATFORM_POSIX)
-endif()
-
-if(TARGET_LINUX)
-    list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/external/nativefiledialog-extended/nfd_gtk.cpp)
-
-    add_definitions(-DLINUX)
-endif()
-
-if(TARGET_MACOS)
-    list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/external/nativefiledialog-extended/nfd_cocoa.m)
-    file(GLOB TARGET_MACOS_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/macOS/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_MACOS_SRCS})
-    file(GLOB TARGET_MACOS_M_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/macOS/*.m)
-    list(APPEND SOURCE_FILES ${TARGET_MACOS_M_SRCS})
-
-    add_definitions(-DMACOS)
-    add_definitions(-DLINUX)
-endif()
-
-if(TARGET_WASM)
-    add_definitions(-DLINUX)
-endif()
-
-if(TARGET_WIN32)
-    file(GLOB TARGET_WIN32_SRCS ${PROJECT_SOURCE_DIR}/src/Platform/Win32/*.c)
-    list(APPEND SOURCE_FILES ${TARGET_WIN32_SRCS})
-
-    list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/packaging/win32/openjkdf2.rc)
-
-    # Prefer the POSIX wuRegistry (JSON) over native
-    if (TARGET_POSIX OR PLAT_MSVC)
-        list(REMOVE_ITEM SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/Platform/Win32/wuRegistry.c)
-    endif()
-
-    if (PLAT_MSVC)
-        list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/Platform/Posix/wuRegistry.c)
-    endif()
-
-    if(TARGET_USE_SDL2)
-        list(APPEND SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/external/nativefiledialog-extended/nfd_win.cpp)
-        if(PLAT_MSVC)
-			set(LINK_LIBS ${LINK_LIBS} ole32.lib uuid.lib)
-		else()
-			add_link_options(-lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid -lws2_32)
-		endif()
-    endif()
-endif()
-
-set(SYMBOLS_FILE ${PROJECT_SOURCE_DIR}/symbols.syms)
-set(GLOBALS_H ${PROJECT_SOURCE_DIR}/src/globals.h)
-set(GLOBALS_C ${PROJECT_SOURCE_DIR}/src/globals.c)
-set(GLOBALS_H_COG ${PROJECT_SOURCE_DIR}/src/globals.h.cog)
-set(GLOBALS_C_COG ${PROJECT_SOURCE_DIR}/src/globals.c.cog)
-list(APPEND SOURCE_FILES ${GLOBALS_C})
-
-# All of our pre-build steps
-add_custom_command(
-    OUTPUT ${GLOBALS_C}
-    COMMAND cog -d -D symbols_fpath="${SYMBOLS_FILE}" -D project_root="${PROJECT_SOURCE_DIR}" -o ${GLOBALS_C} ${GLOBALS_C_COG}
-    DEPENDS ${SYMBOLS_FILE} ${GLOBALS_C_COG} ${GLOBALS_H} ${PROJECT_SOURCE_DIR}/resource/shaders/default_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/default_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/menu_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/menu_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/texfbo_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/texfbo_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/blur_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/blur_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ssao_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ssao_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ssao_mix_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ssao_mix_v.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ui_f.glsl ${PROJECT_SOURCE_DIR}/resource/shaders/ui_v.glsl 
-)
-
-add_custom_command(
-    OUTPUT ${GLOBALS_H}
-    COMMAND cog -d -D symbols_fpath="${SYMBOLS_FILE}" -D project_root="${PROJECT_SOURCE_DIR}" -o ${GLOBALS_H} ${GLOBALS_H_COG}
-    DEPENDS ${SYMBOLS_FILE} ${GLOBALS_H_COG}
-)
-
-add_custom_command(
-    PRE_BUILD
-    OUTPUT ${BIN_NAME}
-    DEPENDS ${GLOBALS_C} ${GLOBALS_H}
-)
+# globals.c/globals.c/precompiled resources preprocessing.
+# This includes selection for most of the files in src/platform/*
+include(cmake_modules/precompile_globals.cmake)
 
 #set( CMAKE_VERBOSE_MAKEFILE on )
 
-if(NOT PLAT_HOOKS)
+if(TARGET_ANDROID)
+    add_library(${BIN_NAME} SHARED ${SOURCE_FILES})
+elseif(NOT TARGET_HOOKS)
     add_executable(${BIN_NAME} ${SOURCE_FILES})
 else()
     add_library(${BIN_NAME} SHARED ${SOURCE_FILES})
@@ -534,6 +457,7 @@ if(TARGET_MACOS)
     )
     target_link_libraries(${BIN_NAME} PRIVATE "-framework AppKit")
     target_link_libraries(${BIN_NAME} PRIVATE "-framework Carbon")
+    target_link_libraries(${BIN_NAME} PRIVATE "-framework SystemConfiguration")
 
     find_package(PkgConfig REQUIRED)
     
@@ -568,6 +492,13 @@ if(TARGET_LINUX)
     link_directories(${LIBPNG_STATIC_LIBRARY_DIRS})
     add_definitions(${LIBPNG_STATIC_CFLAGS_OTHER})
 
+    if(TARGET_USE_CURL)
+        pkg_check_modules(LIBCURL REQUIRED libcurl)
+        include_directories(${LIBCURL_STATIC_INCLUDE_DIRS})
+        link_directories(${LIBCURL_STATIC_LIBRARY_DIRS})
+        add_definitions(${LIBCURL_STATIC_CFLAGS_OTHER})
+    endif()
+
     if(TARGET_USE_GAMENETWORKINGSOCKETS)
         include_directories(${PROJECT_SOURCE_DIR}/3rdparty/GameNetworkingSockets/include)
     endif()
@@ -580,6 +511,7 @@ endif()
 if(NOT OPENJKDF2_NO_ASAN)
     #add_compile_options(-fsanitize=address -fsanitize=float-divide-by-zero)
     #add_link_options(-fsanitize=address -fsanitize=float-divide-by-zero)
+    
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=float-divide-by-zero")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=float-divide-by-zero")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=float-divide-by-zero")
@@ -590,22 +522,7 @@ if(NOT OPENJKDF2_NO_ASAN)
     #add_link_options(-fsanitize=leak)
 endif()
 
-# stdc++fs experimental stuff for ancient compilers
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-        add_definitions(-DFILESYSTEM_TS)
-        target_link_libraries(${BIN_NAME} PRIVATE stdc++fs)
-    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-endif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-        add_definitions(-DFILESYSTEM_TS)
-        target_link_libraries(${BIN_NAME} PRIVATE stdc++fs)
-        # Here clang uses libstdc++ as STL in Linux, which in OSX and FreeBSD should be libc++, and thus it should link c++fs. However, I have neither machine nor time to verify it.
-    endif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
-endif()
-# end stdc++fs experimental stuff for ancient compilers
+include(cmake_modules/misc_stdcpp_fs_fix.cmake)
 
 if(PLAT_MINGW_X86_64)
     set_target_properties(${BIN_NAME} PROPERTIES
@@ -659,10 +576,10 @@ if(PLAT_MINGW_X86_64)
     if(TARGET_USE_PHYSFS)
         target_link_libraries(${BIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/build_physfs/libphysfs.a)
     endif()
-elseif(PLAT_HOOKS)
+elseif(TARGET_HOOKS)
     target_link_libraries(${BIN_NAME} PRIVATE -static-libgcc)
     target_link_libraries("${BIN_NAME}_kvm" PRIVATE -Wl,-e_hook_init -nostartfiles -static -static-libgcc -static-libstdc++)
-elseif(PLAT_WASM)
+elseif(TARGET_WASM)
     target_link_libraries(${BIN_NAME} PRIVATE -lm -lSDL2 -lSDL2_mixer -lGL -lGLEW -lopenal)
     target_link_libraries(${BIN_NAME} PRIVATE nlohmann_json::nlohmann_json)
 elseif(TARGET_LINUX)
@@ -679,6 +596,10 @@ elseif(TARGET_LINUX)
 
     target_link_libraries(${BIN_NAME} PRIVATE nlohmann_json::nlohmann_json)
     target_link_libraries(${BIN_NAME} PRIVATE dl) # dlopen, dlsym
+
+    if(TARGET_USE_CURL)
+        target_link_libraries(${BIN_NAME} PRIVATE curl)
+    endif()
 elseif(PLAT_MSVC)
     set_target_properties(${BIN_NAME} PROPERTIES
       LINK_SEARCH_START_STATIC ON
@@ -727,7 +648,25 @@ elseif(PLAT_MSVC)
     #cp /opt/homebrew/Cellar/mingw-w64/9.0.0_2/toolchain-x86_64/x86_64-w64-mingw32/lib/libgcc_s_seh-1.dll .
     #cp /opt/homebrew/Cellar/mingw-w64/9.0.0_2/toolchain-x86_64/x86_64-w64-mingw32/bin/libwinpthread-1.dll .
     #cp /opt/homebrew/Cellar/mingw-w64/9.0.0_2/toolchain-x86_64/x86_64-w64-mingw32/lib/libstdc++-6.dll . 
-else()
+elseif(TARGET_ANDROID)
+    target_link_libraries(${BIN_NAME} PRIVATE ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY} GLESv1_CM GLESv2 GLESv3 log EGL ${GTK3_LIBRARIES} ${LIBPNG_STATIC_LDFLAGS}) #${OPENAL_LIBRARY} GLEW::GLEW
+     
+    if(TARGET_USE_GAMENETWORKINGSOCKETS)
+        #target_link_libraries(${BIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libGameNetworkingSockets.so)
+        #target_link_libraries(${BIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/libprotobuf.so.3.21.4.0)
+    endif()
+
+    if(TARGET_USE_PHYSFS)
+        target_link_libraries(${BIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/build_physfs/libphysfs.a)
+    endif()
+
+    target_link_libraries(${BIN_NAME} PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(${BIN_NAME} PRIVATE dl) # dlopen, dlsym
+
+    if(TARGET_USE_CURL)
+        target_link_libraries(${BIN_NAME} PRIVATE curl)
+    endif()
+elseif(TARGET_MACOS)
     set(LIBPNG_LIST ${LIBPNG_LIBRARY_DIRS})
     separate_arguments(LIBPNG_LIST)
     message(STATUS "list = ${ZLIB_STATIC_LDFLAGS}")
@@ -741,68 +680,11 @@ else()
     if(TARGET_USE_PHYSFS)
         target_link_libraries(${BIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/build_physfs/libphysfs.a)
     endif()
+else()
+    message(FATAL_ERROR "Unknown target! Cannot continue.")
 endif()
 
-if(TARGET_MACOS)
-    add_custom_command(TARGET ${BIN_NAME}
-    POST_BUILD
-    COMMAND dsymutil ${CMAKE_CURRENT_BINARY_DIR}/${BIN_NAME} -o ${CMAKE_CURRENT_BINARY_DIR}/${BIN_NAME}.dsym
-    COMMAND rm -rf ${BUNDLE}
-    COMMAND rm -rf ${PROJECT_SOURCE_DIR}/packaging/icon.iconset
-    COMMAND rm -rf ${PROJECT_SOURCE_DIR}/packaging/icon.icns
-    COMMAND mkdir -p ${BUNDLE}
-    COMMAND cp -r ${PROJECT_SOURCE_DIR}/packaging/macos/* ${BUNDLE}/
-    COMMAND mkdir -p ${BUNDLE}/Contents/MacOS/
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/${BIN_NAME} ${BUNDLE}/Contents/MacOS
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/sdl2_mixer/lib/libSDL2_mixer-2.0.0.dylib @executable_path/libSDL2_mixer-2.0.0.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/sdl2/lib/libSDL2-2.0.0.dylib @executable_path/libSDL2-2.0.0.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/glew/lib/libGLEW.2.2.dylib @executable_path/libGLEW.2.2.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/sdl2/lib/libSDL2-2.0.0.dylib ${BUNDLE}/Contents/MacOS
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/sdl2_mixer/lib/libSDL2_mixer-2.0.0.dylib ${BUNDLE}/Contents/MacOS
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/glew/lib/libGLEW.2.2.dylib ${BUNDLE}/Contents/MacOS
-    
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/build_gns/bin/libGameNetworkingSockets.dylib ${BUNDLE}/Contents/MacOS
-    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/build_protobuf/libprotobuf.3.21.4.0.dylib ${BUNDLE}/Contents/MacOS
-    COMMAND install_name_tool -change @rpath/libGameNetworkingSockets.dylib @executable_path/libGameNetworkingSockets.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND install_name_tool -change @rpath/libprotobuf.3.21.4.0.dylib @executable_path/libprotobuf.3.21.4.0.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/sdl2/lib/libSDL2-2.0.0.dylib @executable_path/libSDL2-2.0.0.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/sdl2_mixer/lib/libSDL2_mixer-2.0.0.dylib @executable_path/libSDL2_mixer-2.0.0.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libmodplug/lib/libmodplug.1.dylib @executable_path/libmodplug.1.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/libmodplug/lib/libmodplug.1.dylib ${BUNDLE}/Contents/MacOS
-
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/mpg123/lib/libmpg123.0.dylib @executable_path/libmpg123.0.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/mpg123/lib/libmpg123.0.dylib ${BUNDLE}/Contents/MacOS
-
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libvorbis/lib/libvorbis.0.dylib @executable_path/libvorbis.0.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/libvorbis/lib/libvorbis.0.dylib ${BUNDLE}/Contents/MacOS
-    
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libvorbis/lib/libvorbisfile.3.dylib @executable_path/libvorbisfile.3.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/libvorbis/lib/libvorbisfile.3.dylib ${BUNDLE}/Contents/MacOS
-
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib ${BUNDLE}/Contents/MacOS/libGameNetworkingSockets.dylib
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/openssl@1.1/lib/libcrypto.1.1.dylib ${BUNDLE}/Contents/MacOS
-    
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/flac/lib/libFLAC.12.dylib @executable_path/libFLAC.12.dylib ${BUNDLE}/Contents/MacOS/libSDL2_mixer-2.0.0.dylib
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/flac/lib/libFLAC.12.dylib ${BUNDLE}/Contents/MacOS
-    
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libogg/lib/libogg.0.dylib @executable_path/libogg.0.dylib ${BUNDLE}/Contents/MacOS/libFLAC.12.dylib
-    
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libogg/lib/libogg.0.dylib @executable_path/libogg.0.dylib ${BUNDLE}/Contents/MacOS/libvorbis.0.dylib
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/Cellar/libvorbis/1.3.7/lib/libvorbis.0.dylib @executable_path/libvorbis.0.dylib ${BUNDLE}/Contents/MacOS/libvorbisfile.3.dylib
-    COMMAND install_name_tool -change ${HOMEBREW_PREFIX}/opt/libogg/lib/libogg.0.dylib @executable_path/libogg.0.dylib ${BUNDLE}/Contents/MacOS/libvorbisfile.3.dylib
-
-    COMMAND cp ${HOMEBREW_PREFIX}/opt/libogg/lib/libogg.0.dylib ${BUNDLE}/Contents/MacOS
-    COMMAND chmod 774 ${BUNDLE}/Contents/MacOS/*.dylib
-    COMMAND cp -r ${CMAKE_CURRENT_BINARY_DIR}/openjkdf2-64.dsym ${BUNDLE}/Contents/MacOS/openjkdf2-64.dsym
-    COMMAND chmod 774 ${BUNDLE}/Contents/MacOS/${BIN_NAME}
-    COMMAND generate-iconset ${PROJECT_SOURCE_DIR}/packaging/icon.png
-    COMMAND mkdir -p ${BUNDLE}/Contents/Resources/
-    COMMAND cp ${PROJECT_SOURCE_DIR}/packaging/icon.icns ${BUNDLE}/Contents/Resources/OpenJKDF2.icns
-    COMMAND cp -r ${PROJECT_SOURCE_DIR}/resource/ ${BUNDLE}/Contents/Resources/resource/
-    COMMAND rm -rf ${PROJECT_SOURCE_DIR}/packaging/icon.iconset
-    COMMAND rm -rf ${PROJECT_SOURCE_DIR}/packaging/icon.icns
-    )
-endif()
+#
+# macOS post-build packaging
+#
+include(cmake_modules/postcompile_macos.cmake)

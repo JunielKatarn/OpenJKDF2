@@ -1486,7 +1486,6 @@ int sithThing_Load(sithWorld *world, int a2)
     sithThing *v22; // ebx
     int v23; // eax
     sithSector *v24; // edi
-    int v25; // eax
     int v26; // ecx
     int v27; // edi
     stdConffileArg *v28; // ebx
@@ -1590,11 +1589,9 @@ int sithThing_Load(sithWorld *world, int a2)
                 sithThing_SetPosAndRot(v21, &pos, &a);
                 sithThing_EnterSector(v21, v24, 1, 1);
                 sithThing_sub_4CD100(v21);
-                v25 = sithThing_bInitted2;
                 v26 = v21->thingIdx;
-                v21->signature = sithThing_bInitted2;
+                v21->signature = sithThing_bInitted2++;
                 v21->thing_id = v26;
-                sithThing_bInitted2 = v25 + 1;
                 v27 = 10;
                 if ( stdConffile_entry.numArgs > 10 )
                 {
@@ -1613,8 +1610,7 @@ int sithThing_Load(sithWorld *world, int a2)
                 }
                 else
                 {
-                    _strncpy(v21->template_name, stdConffile_entry.args[2].value, 0x1Fu);
-                    v21->template_name[31] = 0;
+                    stdString_SafeStrCopy(v21->template_name, stdConffile_entry.args[2].value, 0x20);
                 }
             }
         }
@@ -1863,11 +1859,11 @@ int sithThing_LoadThingParam(stdConffileArg *arg, sithThing* pThing, int param)
         case THINGPARAM_AICLASS:
             pThing->thingtype = SITH_THING_ACTOR;
             pAIClass = sithAIClass_Load(arg->value);
-            pThing->aiclass = pAIClass;
+            pThing->pAIClass = pAIClass;
             pActor = pThing->actor;
             if ( !pActor || !pAIClass )
                 goto LABEL_58;
-            pActor->aiclass = pAIClass;
+            pActor->pAIClass = pAIClass;
             pActor->numAIClassEntries = pAIClass->numEntries;
             result = 1;
             break;
@@ -2040,7 +2036,7 @@ void sithThing_Sync()
 
         // Added: Co-op
         if (sithMulti_multiModeFlags & MULTIMODEFLAG_COOP && (v1 & THING_SYNC_AI)) {
-            if (sithNet_aSyncThings[v0]->actor && sithNet_aSyncThings[v0]->actor->aiclass)
+            if (sithNet_aSyncThings[v0]->actor && sithNet_aSyncThings[v0]->actor->pAIClass)
                 sithDSS_SendAIStatus(sithNet_aSyncThings[v0]->actor, -1, 1);
         }
 
