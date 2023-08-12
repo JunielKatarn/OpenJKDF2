@@ -52,8 +52,8 @@ static jkGuiMenu jkGuiTitle_menuLoadStatic = {jkGuiTitle_elementsLoadStatic, 0xF
 
 void jkGuiTitle_Startup()
 {
-    jkGui_InitMenu(&jkGuiTitle_menuLoadStatic, jkGui_stdBitmaps[0]);
-    jkGui_InitMenu(&jkGuiTitle_menuLoad, jkGui_stdBitmaps[5]);
+    jkGui_InitMenu(&jkGuiTitle_menuLoadStatic, jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]);
+    jkGui_InitMenu(&jkGuiTitle_menuLoad, jkGui_stdBitmaps[JKGUI_BM_BK_LOADING]);
 #ifdef QOL_IMPROVEMENTS
     jkGuiTitle_elementsLoad[4].bIsVisible = 0;
 #endif
@@ -90,9 +90,15 @@ wchar_t* jkGuiTitle_quicksave_related_func1(stdStrTable *strTable, char *jkl_fna
     stdFnames_CopyShortName(key, 64, jkl_fname);
     jkGuiTitle_sub_4189A0(key);
 
+    // Added: Allow openjkdf2_i8n.uni to override everything
+#ifdef QOL_IMPROVEMENTS
+    retval = stdStrTable_GetUniString(&jkStrings_tableExtOver, key);
+    if ( !retval )
+#endif
+
     retval = stdStrTable_GetUniString(strTable, key);
     if ( !retval )
-        retval = jkStrings_GetText(key);
+        retval = jkStrings_GetUniStringWithFallback(key);
 
     texts = jkGuiTitle_aTexts;
     // Added: cleanup
@@ -108,7 +114,17 @@ wchar_t* jkGuiTitle_quicksave_related_func1(stdStrTable *strTable, char *jkl_fna
     for (int i = 0; i < 20; i++)
     {
         stdString_snprintf(tmp, 64, "%s_TEXT_%02d", key, i);
-        texts->str = stdString_FastWCopy(stdStrTable_GetUniString(&jkCog_strings, tmp));
+
+        wchar_t* pTextStr = NULL;
+
+        // Added: Allow openjkdf2_i8n.uni to override everything
+#ifdef QOL_IMPROVEMENTS
+        pTextStr = stdStrTable_GetUniString(&jkStrings_tableExtOver, key);
+        if ( !pTextStr )
+#endif
+
+        pTextStr = stdStrTable_GetUniString(&jkCog_strings, tmp);
+        texts->str = stdString_FastWCopy(pTextStr);
         ++texts;
     }
 
@@ -260,14 +276,14 @@ void jkGuiTitle_ShowLoadingStatic()
     //wchar_t v4[16]; // [esp+0h] [ebp-20h] BYREF
     // Added: removed undefined behavior, used to use the stack.....
 
-    jkGui_SetModeMenu(jkGui_stdBitmaps[0]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->palette);
     jkGuiTitle_whichLoading = 1;
     sithWorld_SetLoadPercentCallback(jkGuiTitle_WorldLoadCallback);
     verRevision = jkGuiTitle_verRevision;
     verMinor = jkGuiTitle_verMinor;
     verMajor = jkGuiTitle_verMajor;
     verMotsStr = L""; // TODO?
-    guiVersionStr = jkStrings_GetText("GUI_VERSION");
+    guiVersionStr = jkStrings_GetUniStringWithFallback("GUI_VERSION");
     jk_snwprintf(jkGuiTitle_versionBuffer, sizeof(jkGuiTitle_versionBuffer) / sizeof(wchar_t), guiVersionStr, verMajor, verMinor, verRevision, verMotsStr);
     jkGuiTitle_elementsLoadStatic[4].wstr = jkGuiTitle_versionBuffer;
     jkGuiTitle_elementsLoadStatic[1].selectedTextEntry = 0;
@@ -285,7 +301,7 @@ void jkGuiTitle_ShowLoading(char *a1, wchar_t *a2)
     jkGuiTitle_elementsLoad[4].bIsVisible = 0;
 #endif
 
-    jkGui_SetModeMenu(jkGui_stdBitmaps[0]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->palette);
     jkGuiTitle_whichLoading = 2;
     jkGuiRend_SetCursorVisible(0);
     sithWorld_SetLoadPercentCallback(jkGuiTitle_WorldLoadCallback);

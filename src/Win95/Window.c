@@ -37,19 +37,15 @@
 #endif
 //#include <stropts.h>
 
-#ifdef ARCH_WASM
-#include <SDL2/SDL.h>
-#else
-#include <SDL.h>
-#endif
+#include "SDL2_helper.h"
 
 #include <string.h>
 
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #ifdef MACOS
 #include "Platform/macOS/SDL_fix.h"
 #else
-#include <GL/gl.h>
+//#include <GL/gl.h>
 #endif
 #include "Win95/Video.h"
 
@@ -61,10 +57,10 @@
 extern int Window_xPos, Window_yPos;
 #endif
 
-int Window_xSize = 640;
-int Window_ySize = 480;
-int Window_screenXSize = 640;
-int Window_screenYSize = 480;
+int Window_xSize = WINDOW_DEFAULT_WIDTH;
+int Window_ySize = WINDOW_DEFAULT_HEIGHT;
+int Window_screenXSize = WINDOW_DEFAULT_WIDTH;
+int Window_screenYSize = WINDOW_DEFAULT_HEIGHT;
 int Window_isHiDpi = 0;
 int Window_isFullscreen = 0;
 int Window_needsRecreate = 0;
@@ -88,10 +84,10 @@ void Window_SetFullscreen(int val)
         // Reset window when exiting fullscreen
         // TODO: Add settings for these sizes maybe?
         if (Window_isFullscreen && !val) {
-            Window_xSize = 640;
-            Window_ySize = 480;
-            Window_screenXSize = 640;
-            Window_screenYSize = 480;
+            Window_xSize = WINDOW_DEFAULT_WIDTH;
+            Window_ySize = WINDOW_DEFAULT_HEIGHT;
+            Window_screenXSize = WINDOW_DEFAULT_WIDTH;
+            Window_screenYSize = WINDOW_DEFAULT_HEIGHT;
 #ifdef SDL2_RENDER
             Window_xPos = SDL_WINDOWPOS_CENTERED;
             Window_yPos = SDL_WINDOWPOS_CENTERED;
@@ -961,7 +957,12 @@ void Window_SdlUpdate()
                 break;
             case SDL_QUIT:
                 stdPlatform_Printf("Quit!\n");
-                jkPlayer_WriteConf(jkPlayer_playerShortName); // Added
+
+                // Added
+                if (jkPlayer_bHasLoadedSettingsOnce) {
+                    jkPlayer_WriteConf(jkPlayer_playerShortName);
+                }
+                
                 exit(-1);
                 break;
             default:
@@ -1163,8 +1164,14 @@ void Window_RecreateSDL2Window()
     //flags &= ~SDL_WINDOW_RESIZABLE;
 #endif
 
+#ifdef TARGET_ANDROID
+    flags = SDL_WINDOW_SHOWN;
+#endif
+
 #ifdef ARCH_WASM
     displayWindow = SDL_CreateWindow(Window_isHiDpi ? "OpenJKDF2 HiDPI" : "OpenJKDF2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, canvas_get_width(), canvas_get_height(), flags);
+#elif defined(TARGET_ANDROID)
+    displayWindow = SDL_CreateWindow(Window_isHiDpi ? "OpenJKDF2 HiDPI" : "OpenJKDF2", 0, 0, Window_screenXSize, Window_screenYSize, flags);
 #else
     displayWindow = SDL_CreateWindow(Window_isHiDpi ? "OpenJKDF2 HiDPI" : "OpenJKDF2", Window_xPos, Window_yPos, Window_screenXSize, Window_screenYSize, flags);
 #endif
@@ -1256,6 +1263,11 @@ int Window_Main_Linux(int argc, char** argv)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 #endif
+#elif defined(TARGET_ANDROID)
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 #elif defined(ARCH_WASM)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -1273,7 +1285,9 @@ int Window_Main_Linux(int argc, char** argv)
 
     
     Window_RecreateSDL2Window();
+#if !defined(TARGET_ANDROID) && !defined(ARCH_WASM)
     glewInit();
+#endif
     
     //SDL_RenderClear(displayRenderer);
     //SDL_RenderPresent(displayRenderer);
@@ -1338,7 +1352,10 @@ int Window_Main_Linux(int argc, char** argv)
     }
 #endif
 
-    jkPlayer_WriteConf(jkPlayer_playerShortName); // Added
+    // Added
+    if (jkPlayer_bHasLoadedSettingsOnce) {
+        jkPlayer_WriteConf(jkPlayer_playerShortName);
+    }
 
     Main_Shutdown();
     return 1;

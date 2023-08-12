@@ -439,9 +439,16 @@ void jkCog_PrintUniString(sithCog *ctx)
     if ( v2 >= 0 )
         v3 = sithPlayer_GetNumidk(v2);
     stdString_snprintf(key, 64, "COG_%05d", v1);
+
+    // Added: Allow openjkdf2_i8n.uni to override everything
+#ifdef QOL_IMPROVEMENTS
+    v4 = stdStrTable_GetUniString(&jkStrings_tableExtOver, key);
+    if ( !v4 )
+#endif
+
     v4 = stdStrTable_GetUniString(&jkCog_strings, key);
     if ( !v4 )
-        v4 = jkStrings_GetText(key);
+        v4 = jkStrings_GetUniStringWithFallback(key);
     stdString_WcharToChar(v8, v4, 127);
     v8[127] = 0;
     if ( v3 >= 0 )
@@ -644,9 +651,16 @@ void jkCog_StringConcatUnistring(sithCog *pCog)
 
     uniID = sithCogExec_PopInt(pCog);
     stdString_snprintf(key, 32, "COG_%05d", uniID);
+
+// Added: Allow openjkdf2_i8n.uni to override everything
+#ifdef QOL_IMPROVEMENTS
+    str = stdStrTable_GetUniString(&jkStrings_tableExtOver, key);
+    if ( !str )
+#endif
+
     str = stdStrTable_GetUniString(&jkCog_strings, key);
     if ( !str )
-        str = jkStrings_GetText(key);
+        str = jkStrings_GetUniStringWithFallback(key);
 
     finalLen = _wcslen(str) + _wcslen(jkCog_jkstring);
     if (finalLen < 0x81)

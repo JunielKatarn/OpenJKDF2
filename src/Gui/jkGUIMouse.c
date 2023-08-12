@@ -17,15 +17,17 @@
 #include "World/jkPlayer.h"
 #include "Main/jkStrings.h"
 #include "Devices/sithControl.h"
+#include "types.h"
+#include "types_enums.h"
 
 #include <math.h>
 #include <float.h>
 
 void jkGuiMouse_SensitivityDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vbuf, int redraw);
 
-static const int jkGUIMouse_idk1 = 0xAA;
-static int aIdk_52B170[2] = {0xd, 0xe};
-static int aIdk_52B168[2] = {0x13, 0x11};
+static const int jkGUIMouse_listbox_paddings = 0xAA;
+static int jkGUIMouse_listbox_images[2] = {JKGUI_BM_UP_15, JKGUI_BM_DOWN_15};
+static int jkGUIMouse_slider_images[2] = {JKGUI_BM_SLIDER_BACK_200, JKGUI_BM_SLIDER_THUMB};
 
 #ifdef QOL_IMPROVEMENTS
 static wchar_t slider_val_text[5] = {0};
@@ -71,16 +73,16 @@ static jkGuiElement jkGuiMouse_aElements[26] =
     {ELEMENT_TEXTBUTTON,  106, 2, "GUI_MOUSE",              3, {180, 120, 140, 40},  1, 0, "GUI_MOUSE_HINT", 0, 0, 0, {0}, 0},
     {ELEMENT_TEXTBUTTON,  107, 2, "GUI_JOYSTICK",           3, {320, 120, 140, 40}, 1, 0, "GUI_JOYSTICK_HINT", 0, 0, 0, {0}, 0},
     {ELEMENT_TEXTBUTTON,  108, 2, "GUI_CONTROLOPTIONS",     3, {460, 120, 140,  40}, 1, 0, "GUI_CONTROLOPTIONS_HINT", 0, 0, 0, {0}, 0},
-    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 20, 170, 380, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked1, aIdk_52B170, {0}, 0},
-    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 420, 170, 200, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked2, aIdk_52B170, {0}, 0},
-    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 420, 170, 200, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked3, aIdk_52B170, {0}, 0},
+    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 20, 170, 380, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked1, jkGUIMouse_listbox_images, {0}, 0},
+    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 420, 170, 200, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked2, jkGUIMouse_listbox_images, {0}, 0},
+    {ELEMENT_LISTBOX,     0,   0, NULL,                     0, { 420, 170, 200, 141 }, 1, 0, "GUI_CONTROLSLIST_HINT", NULL, jkGuiMouse_ListClicked3, jkGUIMouse_listbox_images, {0}, 0},
     {ELEMENT_TEXTBUTTON,  0,   2, "GUI_ADD_CONTROL",        3, { 420, 190, 200, 40 }, 1, 0, "GUI_ADD_CONTROL_HINT", NULL, jkGuiMouse_AddEditControlsClicked, NULL, {0}, 0},
     {ELEMENT_TEXTBUTTON,  0,   2, "GUI_EDIT_CONTROL",       3, { 420, 190, 200, 40 }, 1, 0, "GUI_EDIT_CONTROL_HINT", NULL, jkGuiMouse_AddEditControlsClicked, NULL, {0}, 0},
     {ELEMENT_TEXTBUTTON,  0,   2, "GUI_REMOVE_CONTROL",     3, { 420, 230, 200, 40 }, 1, 0, "GUI_REMOVE_CONTROL_HINT", NULL, jkGuiMouse_RemoveClicked, NULL, {0}, 0},
     {ELEMENT_CHECKBOX,    0,   0, "GUI_REVERSE_AXIS",       0, { 320, 335, 300, 20 }, 1, 0, "GUI_REVERSE_HINT", NULL, NULL, NULL, {0}, 0},
     {ELEMENT_CHECKBOX,    0,   0, "GUI_CONTROL_RAW",        0, { 320, 365, 300, 20 }, 1, 0, "GUI_RAW_HINT", NULL, NULL, NULL, {0}, 0},
     {ELEMENT_TEXT,        0,   0, "GUI_SENSITIVITY",        2, { 50, 335, 170, 20 }, 1, 0, NULL, NULL, NULL, NULL, {0}, 0}, 
-    {ELEMENT_SLIDER,      0,   0, (char *)200,             50, { 60, 355, 205, 30 }, 1, 0, "GUI_SENSITIVITY_HINT", jkGuiMouse_SensitivityDraw, NULL, aIdk_52B168, {0}, 0},
+    {ELEMENT_SLIDER,      0,   0, (char *)200,             50, { 60, 355, 205, 30 }, 1, 0, "GUI_SENSITIVITY_HINT", jkGuiMouse_SensitivityDraw, NULL, jkGUIMouse_slider_images, {0}, 0},
     {ELEMENT_TEXTBUTTON,  1,   2, "GUI_OK",                 3, { 440, 430, 200, 40 }, 1, 0, NULL, NULL, jkGuiMouse_CancelOkClicked, NULL, {0}, 0},
     {ELEMENT_TEXTBUTTON, -1,   2, "GUI_CANCEL",             3, { 0, 430, 200, 40 }, 1, 0, NULL, NULL, jkGuiMouse_CancelOkClicked, NULL, {0}, 0},
     {ELEMENT_TEXTBUTTON,  0,   2, "GUI_RESTORE_DEFAULTS",   3, { 200, 430, 240, 40 }, 1, 0, NULL, NULL, jkGuiMouse_RestoreDefaultsClicked, NULL, {0}, 0},
@@ -93,7 +95,7 @@ static jkGuiElement jkGuiMouse_aElements[26] =
     {ELEMENT_END,         0,   0, NULL,                     0, {0}, 0, 0, NULL, NULL, NULL, NULL, {0}, 0},
 };
 
-static jkGuiMenu jkGuiMouse_menu = {jkGuiMouse_aElements, 0, 225, 255, 15, NULL, NULL, jkGui_stdBitmaps, jkGui_stdFonts, (intptr_t)&jkGUIMouse_idk1, NULL, "thermloop01.wav", "thrmlpu2.wav", 0, 0, 0, 0, 0, 0};
+static jkGuiMenu jkGuiMouse_menu = {jkGuiMouse_aElements, 0, 225, 255, 15, NULL, NULL, jkGui_stdBitmaps, jkGui_stdFonts, (intptr_t)&jkGUIMouse_listbox_paddings, NULL, "thermloop01.wav", "thrmlpu2.wav", 0, 0, 0, 0, 0, 0};
 
 void jkGuiMouse_SensitivityDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuffer *vbuf, int redraw)
 {
@@ -110,11 +112,11 @@ void jkGuiMouse_SensitivityDraw(jkGuiElement *element, jkGuiMenu *menu, stdVBuff
     jkGuiRend_UpdateAndDrawClickable(&jkGuiMouse_aElements[24], menu, 1);
 }
 
-int jkGuiMouse_ListClicked1(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_ListClicked1(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int redraw)
 {
     signed int result; // eax
 
-    jkGuiRend_ClickSound(pElement, pMenu, mouseX, mouseY, a5);
+    jkGuiRend_ClickSound(pElement, pMenu, mouseX, mouseY, redraw);
     if ( pElement->texInfo.anonymous_18 )
     {
         jkGuiRend_PlayWav(pMenu->soundClick);
@@ -122,7 +124,7 @@ int jkGuiMouse_ListClicked1(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
     }
     else
     {
-        if ( a5 )
+        if ( redraw )
             jkGuiMouse_dword_5566B0 = 1;
         jkGuiMouse_sub_416D40(pMenu, 1);
         result = 0;
@@ -272,18 +274,18 @@ LABEL_29:
     }
 }
 
-int jkGuiMouse_ListClicked2(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_ListClicked2(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     char *v5; // edx
 
-    jkGuiRend_ClickSound(pClickedElement, pMenu, mouseX, mouseY, a5);
+    jkGuiRend_ClickSound(pClickedElement, pMenu, mouseX, mouseY, redraw);
     if ( pClickedElement->texInfo.anonymous_18 )
     {
         v5 = pMenu->soundClick;
         jkGuiMouse_dword_5566B0 = 0;
         jkGuiRend_PlayWav(v5);
     }
-    if ( a5 )
+    if ( redraw )
     {
         jkGuiMouse_sub_417100(jkGuiMouse_aElements[11].selectedTextEntry, pClickedElement->selectedTextEntry);
         jkGuiMouse_dword_5566B0 = 0;
@@ -336,8 +338,8 @@ void jkGuiMouse_sub_417100(int a1, int a2)
     }
     else
     {
-        v12 = jkStrings_GetText("ERR_CANNOT_BIND_CONTROL");
-        v11 = jkStrings_GetText("ERROR");
+        v12 = jkStrings_GetUniStringWithFallback("ERR_CANNOT_BIND_CONTROL");
+        v11 = jkStrings_GetUniStringWithFallback("ERROR");
         jkGuiDialog_ErrorDialog(v11, v12);
         jkGuiMouse_sub_416D40(&jkGuiMouse_menu, 0);
         jkGuiRend_Paint(&jkGuiMouse_menu);
@@ -371,7 +373,7 @@ void jkGuiMouse_sub_417210()
     v2 = &jkGuiMouse_aEntries[0];
     for (int i = 0; i < NUM_MOUSE_ENTRIES; i++)
     {
-        v3 = jkStrings_GetText(v2->displayStrKey);
+        v3 = jkStrings_GetUniStringWithFallback(v2->displayStrKey);
 
         // Added
         if (!v3) v3 = L"";
@@ -422,7 +424,7 @@ int jkGuiMouse_EnumBindings(int a1, const char *a2, uint32_t a3, int a4, uint32_
     v8 = &jkGuiMouse_pWStr_5566E8;
     if ( (a3 & 1) == 0 )
         return 1;
-    v9 = jkStrings_GetText2(a2);
+    v9 = jkStrings_GetUniString(a2);
     v15 = v9;
     if ( !v9 )
         return 1;
@@ -446,7 +448,7 @@ int jkGuiMouse_EnumBindings(int a1, const char *a2, uint32_t a3, int a4, uint32_
         {
             strncat(v16, "_K", 0x20u);
         }
-        v8 = jkStrings_GetText(v16);
+        v8 = jkStrings_GetUniStringWithFallback(v16);
         if ( !v8 )
             return 1;
         v9 = v15;
@@ -503,7 +505,7 @@ int jkGuiMouse_EnumBindings(int a1, const char *a2, uint32_t a3, int a4, uint32_
     return 1;
 }
 
-int jkGuiMouse_ListClicked3(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_ListClicked3(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     char *v5; // edx
     int v6; // esi
@@ -517,14 +519,14 @@ int jkGuiMouse_ListClicked3(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
     wchar_t *v14; // eax
     wchar_t *v16; // [esp-4h] [ebp-14h]
 
-    jkGuiRend_ClickSound(pElement, pMenu, mouseX, mouseY, a5);
+    jkGuiRend_ClickSound(pElement, pMenu, mouseX, mouseY, redraw);
     if ( pElement->texInfo.anonymous_18 )
     {
         v5 = pMenu->soundClick;
         jkGuiMouse_dword_5566B0 = 0;
         jkGuiRend_PlayWav(v5);
     }
-    if ( a5 )
+    if ( redraw )
     {
         v6 = pElement->selectedTextEntry;
         v7 = jkGuiRend_GetId(&jkGuiMouse_Darray_5566B8, jkGuiMouse_aElements[11].selectedTextEntry);
@@ -542,8 +544,8 @@ int jkGuiMouse_ListClicked3(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
         }
         else
         {
-            v16 = jkStrings_GetText("ERR_CANNOT_BIND_CONTROL");
-            v14 = jkStrings_GetText("ERROR");
+            v16 = jkStrings_GetUniStringWithFallback("ERR_CANNOT_BIND_CONTROL");
+            v14 = jkStrings_GetUniStringWithFallback("ERROR");
             jkGuiDialog_ErrorDialog(v14, v16);
             jkGuiMouse_sub_416D40(&jkGuiMouse_menu, 0);
             jkGuiRend_Paint(&jkGuiMouse_menu);
@@ -554,7 +556,7 @@ int jkGuiMouse_ListClicked3(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
     return 0;
 }
 
-int jkGuiMouse_AddEditControlsClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_AddEditControlsClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     jkGuiMouse_dword_5566B0 = 1;
     jkGuiRend_PlayWav(pMenu->soundClick);
@@ -562,7 +564,7 @@ int jkGuiMouse_AddEditControlsClicked(jkGuiElement *pClickedElement, jkGuiMenu *
     return 0;
 }
 
-int jkGuiMouse_RemoveClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_RemoveClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     int v5; // eax
 
@@ -576,7 +578,7 @@ int jkGuiMouse_RemoveClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, in
     return 0;
 }
 
-int jkGuiMouse_CancelOkClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_CancelOkClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     int v5; // esi
     int v6; // ebx
@@ -612,8 +614,8 @@ int jkGuiMouse_CancelOkClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, 
             }
             else
             {
-                v15 = jkStrings_GetText("ERR_CANNOT_BIND_CONTROL");
-                v13 = jkStrings_GetText("ERROR");
+                v15 = jkStrings_GetUniStringWithFallback("ERR_CANNOT_BIND_CONTROL");
+                v13 = jkStrings_GetUniStringWithFallback("ERROR");
                 jkGuiDialog_ErrorDialog(v13, v15);
                 jkGuiMouse_sub_416D40(&jkGuiMouse_menu, 0);
                 jkGuiRend_Paint(&jkGuiMouse_menu);
@@ -629,14 +631,14 @@ int jkGuiMouse_CancelOkClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, 
     return 0;
 }
 
-int jkGuiMouse_RestoreDefaultsClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, int a5)
+int jkGuiMouse_RestoreDefaultsClicked(jkGuiElement *pClickedElement, jkGuiMenu *pMenu, int mouseX, int mouseY, BOOL redraw)
 {
     wchar_t *v5; // eax
     wchar_t *v7; // [esp-4h] [ebp-8h]
 
     jkGuiRend_PlayWav(pMenu->soundClick);
-    v7 = jkStrings_GetText("GUI_RESTORE_DEFAULTS_Q");
-    v5 = jkStrings_GetText("GUI_RESTORE_DEFAULTS");
+    v7 = jkStrings_GetUniStringWithFallback("GUI_RESTORE_DEFAULTS_Q");
+    v5 = jkStrings_GetUniStringWithFallback("GUI_RESTORE_DEFAULTS");
     if ( jkGuiDialog_YesNoDialog(v5, v7) )
         sithControl_sub_4D7670();
     jkGuiMouse_sub_417210();
@@ -700,7 +702,7 @@ int jkGuiMouse_Show()
 
 void jkGuiMouse_Startup()
 {
-    jkGui_InitMenu(&jkGuiMouse_menu, jkGui_stdBitmaps[3]);
+    jkGui_InitMenu(&jkGuiMouse_menu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
 }
 
 void jkGuiMouse_Shutdown()

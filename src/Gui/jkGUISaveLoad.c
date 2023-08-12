@@ -41,10 +41,10 @@ static jkGuiElement jkGuiSaveLoad_aElements[15] = {
 
 static jkGuiMenu jkGuiSaveLoad_menu = {jkGuiSaveLoad_aElements, 0xFFFFFFFF, 0xFFFF, 0xFFFF, 0xF, 0, 0, jkGui_stdBitmaps, jkGui_stdFonts, 0, 0, "thermloop01.wav", "thrmlpu2.wav", 0, 0, 0, 0, 0, 0};
 
-int jkGuiSaveLoad_ListClick(jkGuiElement *element, jkGuiMenu *menu, int mouseX, int mouseY, int a5)
+int jkGuiSaveLoad_ListClick(jkGuiElement *element, jkGuiMenu *menu, int mouseX, int mouseY, BOOL redraw)
 {
-    jkGuiRend_ClickSound(element, menu, mouseX, mouseY, a5);
-    if ( a5 )
+    jkGuiRend_ClickSound(element, menu, mouseX, mouseY, redraw);
+    if ( redraw )
         return 12345;
     jkGuiSaveLoad_PopulateInfo(1);
     return 0;
@@ -131,9 +131,9 @@ LABEL_15:
     }
     _wcsncpy(jkGuiSaveLoad_wtextSaveName, saveName, 0xFFu);
     jkGuiSaveLoad_wtextSaveName[255] = 0;
-    v10 = jkStrings_GetText("GUI_SLHEALTH");
+    v10 = jkStrings_GetUniStringWithFallback("GUI_SLHEALTH");
     jk_snwprintf(jkGuiSaveLoad_wtextHealth, 0x40u, v10, (unsigned int)(__int64)playerHealth_, (unsigned int)(__int64)playerMaxHealth_);
-    v11 = jkStrings_GetText("GUI_SLSHIELDS");
+    v11 = jkStrings_GetUniStringWithFallback("GUI_SLSHIELDS");
     jk_snwprintf(jkGuiSaveLoad_wtextShields, 0x40u, v11, (unsigned int)(__int64)shieldsAmt_);
     if ( bRedraw )
     {
@@ -161,8 +161,8 @@ int jkGuiSaveLoad_DeleteOnClick(jkGuiElement *element, jkGuiMenu *menu, int mous
         v2 = (jkGuiSaveLoad_Entry *)(jkGuiRend_GetId(&jkGuiSaveLoad_DarrayEntries, jkGuiSaveLoad_aElements[4].selectedTextEntry) + 1580);
         if ( __strcmpi((const char *)v2, "quicksave.jks") )
         {
-            wstr_confirmDel = jkStrings_GetText("GUI_SLCONFIRM_DELETE");
-            wstr_del = jkStrings_GetText("GUI_SLDELETE");
+            wstr_confirmDel = jkStrings_GetUniStringWithFallback("GUI_SLCONFIRM_DELETE");
+            wstr_del = jkStrings_GetUniStringWithFallback("GUI_SLDELETE");
             if ( jkGuiDialog_YesNoDialog(wstr_del, wstr_confirmDel) )
             {
                 sithGamesave_GetProfilePath(FileName, 128, (char *)v2);
@@ -302,14 +302,14 @@ int jkGuiSaveLoad_Show(int bIsSave)
     jkGuiSaveLoad_aElements[4].selectedTextEntry = 0;
     jkGuiSaveLoad_aElements[1].bIsVisible = bIsSave;
     jkGuiSaveLoad_aElements[2].bIsVisible = bIsSave;
-    jkGuiSaveLoad_aElements[2].func = jkGuiSaveLoad_PopulateInfoInit;
+    jkGuiSaveLoad_aElements[2].clickHandlerFunc = jkGuiSaveLoad_PopulateInfoInit;
     jkGuiSaveLoad_aElements[13].bIsVisible = jkGuiSaveLoad_numEntries > 0;
     if ( bIsSave || (jkGuiSaveLoad_aElements[11].bIsVisible = 0, jkGuiSaveLoad_numEntries > 0) )
         jkGuiSaveLoad_aElements[11].bIsVisible = 1;
     v1 = "GUI_SLSAVEGAME";
     if ( !bIsSave )
         v1 = "GUI_SLLOADGAME";
-    jkGuiSaveLoad_aElements[0].wstr = jkStrings_GetText2(v1);
+    jkGuiSaveLoad_aElements[0].wstr = jkStrings_GetUniString(v1);
     jkGuiRend_MenuSetReturnKeyShortcutElement(&jkGuiSaveLoad_menu, &jkGuiSaveLoad_aElements[11]);
     jkGuiRend_MenuSetEscapeKeyShortcutElement(&jkGuiSaveLoad_menu, &jkGuiSaveLoad_aElements[12]);
     jkGuiSaveLoad_menu.focusedElement = &jkGuiSaveLoad_aElements[2];
@@ -326,8 +326,8 @@ int jkGuiSaveLoad_Show(int bIsSave)
                 goto LABEL_46;
             if ( !bIsSave || _wcslen(jkGuiSaveLoad_word_559830) )
                 break;
-            v26 = jkStrings_GetText("GUI_CSLMUSTENTERNAME");
-            v4 = jkStrings_GetText("ERROR");
+            v26 = jkStrings_GetUniStringWithFallback("GUI_CSLMUSTENTERNAME");
+            v4 = jkStrings_GetUniStringWithFallback("ERROR");
             jkGuiDialog_ErrorDialog(v4, v26);
         }
         v5 = jkGuiSaveLoad_aElements[4].selectedTextEntry;
@@ -408,8 +408,8 @@ LABEL_44:
             sithGamesave_Flush();
             goto LABEL_45;
         }
-        v27 = jkStrings_GetText("GUI_SLCONFIRM_OVERWRITE");
-        v11 = jkStrings_GetText("GUI_SLOVERWRITE");
+        v27 = jkStrings_GetUniStringWithFallback("GUI_SLCONFIRM_OVERWRITE");
+        v11 = jkStrings_GetUniStringWithFallback("GUI_SLOVERWRITE");
         if ( jkGuiDialog_YesNoDialog(v11, v27) )
             goto LABEL_44;
     }
@@ -444,7 +444,7 @@ LABEL_46:
     return result;
 }
 
-int jkGuiSaveLoad_PopulateInfoInit(jkGuiElement *a1, jkGuiMenu *a2, int a3, int a4, int a5)
+int jkGuiSaveLoad_PopulateInfoInit(jkGuiElement *a1, jkGuiMenu *a2, int a3, int a4, BOOL redraw)
 {
     jkGuiSaveLoad_PopulateInfo(1);
     return 0;
@@ -452,7 +452,7 @@ int jkGuiSaveLoad_PopulateInfoInit(jkGuiElement *a1, jkGuiMenu *a2, int a3, int 
 
 void jkGuiSaveLoad_Startup()
 {
-    jkGui_InitMenu(&jkGuiSaveLoad_menu, jkGui_stdBitmaps[3]);
+    jkGui_InitMenu(&jkGuiSaveLoad_menu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
 }
 
 void jkGuiSaveLoad_Shutdown()

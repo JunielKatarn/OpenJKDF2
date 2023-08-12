@@ -11,28 +11,7 @@ void* jkgm_alloc_aligned(size_t amt);
 void jkgm_aligned_free(void* p);
 
 #ifdef SDL2_RENDER
-#ifndef ARCH_WASM
-
-#ifdef MACOS
-#define GL_SILENCE_DEPRECATION
-#include <SDL.h>
-#include <OpenGL/gl.h>
-#elif defined(ARCH_WASM)
-#ifdef __cplusplus
-}
-#endif
-#include <emscripten.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <SDL.h>
-#include <SDL_opengles2.h>
-#else
-#include <GL/glew.h>
-#include <SDL.h>
-#include <GL/gl.h>
-#endif
-
+#if defined(TARGET_CAN_JKGM)
 void jkgm_startup();
 void jkgm_populate_cache();
 void jkgm_populate_shortcuts(stdVBuffer *vbuf, rdDDrawSurface *texture, rdMaterial* material, int is_alpha_tex, int mipmap_level, int cel);

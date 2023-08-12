@@ -26,6 +26,7 @@
 #include "Platform/std3D.h"
 #include "Win95/Window.h"
 #include "Platform/stdControl.h"
+#include "Platform/Common/stdUpdater.h"
 #include "Gameplay/sithPlayerActions.h"
 #include "Main/sithCvar.h"
 #include "../jk.h"
@@ -56,13 +57,18 @@ int jkQuakeConsole_bHasTabbed = 0;
 int jkQuakeConsole_realHistoryLines = 0;
 int jkQuakeConsole_selectedHistory = 0;
 int jkQuakeConsole_bShiftHeld = 0;
+int jkQuakeConsole_bShowUpdateText = 0;
+int jkQuakeConsole_updateTextCooldown = 0;
+int jkQuakeConsole_updateTextWidth = 0;
+int jkQuakeConsole_updateTextHeight = 0;
+int jkQuakeConsole_bClickedUpdate = 0;
 
 char* jkQuakeConsole_pTabPos = NULL;
 char* jkQuakeConsole_aLines[JKQUAKECONSOLE_NUM_LINES];
 char* jkQuakeConsole_aLastCommands[JKQUAKECONSOLE_COMMAND_HISTORY_DEPTH];
 
 int jkQuakeConsole_sortTmpIdx = 0;
-char* jkQuakeConsole_aSortTmp[JKQUAKECONSOLE_SORTED_LIMIT];
+const char* jkQuakeConsole_aSortTmp[JKQUAKECONSOLE_SORTED_LIMIT];
 
 void jkQuakeConsole_ResetShade();
 
@@ -114,6 +120,11 @@ void jkQuakeConsole_Startup()
         memset(jkQuakeConsole_chatStrSaved, 0, sizeof(jkQuakeConsole_chatStrSaved));
 
         jkQuakeConsole_bShiftHeld = 0;
+
+        jkQuakeConsole_bShowUpdateText = stdUpdater_CheckForUpdates();
+        if (jkQuakeConsole_bShowUpdateText) {
+            jkQuakeConsole_updateTextCooldown = 10*1000*1000;
+        }
 
         jkQuakeConsole_bOnce = 1;
     }
@@ -169,6 +180,28 @@ void jkQuakeConsole_Render()
     }
     int maxVisibleLines = (int)((screenH / 2) / fontHeight)-2;
 
+    // Show update text over everything
+    if (jkQuakeConsole_bShowUpdateText || jkQuakeConsole_bClickedUpdate) {
+        wchar_t tmp[128];
+
+        jkQuakeConsole_updateTextCooldown -= deltaUs;
+        if (jkQuakeConsole_updateTextCooldown <= 0) {
+            jkQuakeConsole_updateTextCooldown = 0;
+            jkQuakeConsole_bShowUpdateText = 0;
+        }
+
+        // TODO: i8n
+        stdUpdater_GetUpdateText(tmp, sizeof(tmp));
+        jkQuakeConsole_updateTextWidth = stdFont_Draw1GPU(jkQuakeConsole_pFont, 0, 0, screenW, tmp, 1, jkPlayer_hudScale);
+        
+#if !defined(PLATFORM_LINUX)
+        if (!jkQuakeConsole_bClickedUpdate) {
+            stdFont_Draw1GPU(jkQuakeConsole_pFont, 0, fontHeight, screenW, jkStrings_GetUniStringWithFallback("GUIEXT_UPDATE_CLICK_TO_DL"), 1, jkPlayer_hudScale);
+        }
+#endif
+        jkQuakeConsole_updateTextHeight = (int)(fontHeight * 2);
+    }
+
     if (jkQuakeConsole_bOpen)
     {
         jkQuakeConsole_shadeY += (float)deltaUs * 0.005;
@@ -208,14 +241,14 @@ void jkQuakeConsole_Render()
     float realShadeY = -(screenH / 2) + jkQuakeConsole_shadeY;
     float realShadeBottom = realShadeY + (screenH / 2);
 
-    if (jkGui_stdBitmaps[0]) {
-        float scaleX = screenW / jkGui_stdBitmaps[0]->mipSurfaces[0]->format.width;
-        float scaleY = screenH / jkGui_stdBitmaps[0]->mipSurfaces[0]->format.height;
-        rdRect srcRect = {0,20,jkGui_stdBitmaps[0]->mipSurfaces[0]->format.width, jkGui_stdBitmaps[0]->mipSurfaces[0]->format.height*0.5};
-        std3D_DrawUIBitmapRGBA(jkGui_stdBitmaps[0], 0, 0.0, realShadeY, &srcRect, scaleX, scaleY, 0, 80, 80, 80, 192);
+    if (jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]) {
+        float scaleX = screenW / jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->mipSurfaces[0]->format.width;
+        float scaleY = screenH / jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->mipSurfaces[0]->format.height;
+        rdRect srcRect = {0,20,jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->mipSurfaces[0]->format.width, jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->mipSurfaces[0]->format.height*0.5};
+        std3D_DrawUIBitmapRGBA(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN], 0, 0.0, realShadeY, &srcRect, scaleX, scaleY, 0, 80, 80, 80, 192);
 
-        rdRect srcRect2 = {0,jkGui_stdBitmaps[0]->mipSurfaces[0]->format.height-4, 1, 2};
-        std3D_DrawUIBitmapRGBA(jkGui_stdBitmaps[0], 0, 0.0, realShadeBottom, &srcRect2, (float)screenW, scaleY, 0, 255, 255, 255, 255);
+        rdRect srcRect2 = {0,jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->mipSurfaces[0]->format.height-4, 1, 2};
+        std3D_DrawUIBitmapRGBA(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN], 0, 0.0, realShadeBottom, &srcRect2, (float)screenW, scaleY, 0, 255, 255, 255, 255);
     }
     else {
         rdRect rect = {0, realShadeY, screenW, screenH / 2};
@@ -269,7 +302,7 @@ int jkQuakeConsole_AutocompleteCvarsCallback_bPrintOnce = 0;
 
 void jkQuakeConsole_AutocompleteCvarsCallback(tSithCvar* pCvar)
 {
-    if (!__strnicmp(jkQuakeConsole_pTabPos, pCvar->pName, strlen(jkQuakeConsole_pTabPos))) {
+    if (!*jkQuakeConsole_pTabPos || !__strnicmp(jkQuakeConsole_pTabPos, pCvar->pName, strlen(jkQuakeConsole_pTabPos))) {
         jkQuakeConsole_AutocompleteCvarsCallback_bPrintOnce = 1;
 
         if (jkQuakeConsole_sortTmpIdx < JKQUAKECONSOLE_SORTED_LIMIT) {
@@ -285,17 +318,6 @@ int jkQuakeConsole_AutocompleteCvars()
     jkQuakeConsole_AutocompleteCvarsCallback_bPrintOnce = 0;
     sithCvar_Enumerate(jkQuakeConsole_AutocompleteCvarsCallback);
 
-    for (int i = 0; i < sithConsole_pCmdHashtable->numBuckets; i++)
-    {
-        stdLinklist* pIter = &sithConsole_pCmdHashtable->buckets[i];
-        while (pIter)
-        {
-            if (pIter->key) {
-                
-            }
-            pIter = pIter->next;
-        }
-    }
     return jkQuakeConsole_AutocompleteCvarsCallback_bPrintOnce;
 }
 
@@ -310,7 +332,7 @@ int jkQuakeConsole_AutocompleteCheats()
         while (pIter)
         {
             if (pIter->key) {
-                if (!__strnicmp(jkQuakeConsole_pTabPos, pIter->key, strlen(jkQuakeConsole_pTabPos))) {
+                if (!*jkQuakeConsole_pTabPos || !__strnicmp(jkQuakeConsole_pTabPos, pIter->key, strlen(jkQuakeConsole_pTabPos))) {
                     bPrintOnce = 1;
 
                     if (jkQuakeConsole_sortTmpIdx < JKQUAKECONSOLE_SORTED_LIMIT) {
@@ -335,7 +357,7 @@ int jkQuakeConsole_AutocompleteConsoleCmds()
         while (pIter)
         {
             if (pIter->key) {
-                if (!__strnicmp(jkQuakeConsole_pTabPos, pIter->key, strlen(jkQuakeConsole_pTabPos))) {
+                if (!*jkQuakeConsole_pTabPos || !__strnicmp(jkQuakeConsole_pTabPos, pIter->key, strlen(jkQuakeConsole_pTabPos))) {
                     bPrintOnce = 1;
 
                     if (jkQuakeConsole_sortTmpIdx < JKQUAKECONSOLE_SORTED_LIMIT) {
@@ -649,11 +671,11 @@ void jkQuakeConsole_SendInput(char wParam, int bIsChar)
         }
         if ( jkHud_dword_552D10 == -2 )
         {
-            //stdString_SafeWStrCopy(tmp, jkStrings_GetText("HUD_COMMAND"), 0x80u);
+            //stdString_SafeWStrCopy(tmp, jkStrings_GetUniStringWithFallback("HUD_COMMAND"), 0x80u);
         }
         else if ( jkHud_dword_552D10 == -1 )
         {
-            //stdString_SafeWStrCopy(tmp, jkStrings_GetText("HUD_SENDTOALL"), 0x80u);
+            //stdString_SafeWStrCopy(tmp, jkStrings_GetUniStringWithFallback("HUD_SENDTOALL"), 0x80u);
         }
         //int v2 = _wcslen(tmp);
         //stdString_CharToWchar(&tmp[v2], jkQuakeConsole_chatStr, 127 - v2);
@@ -666,6 +688,8 @@ int jkQuakeConsole_WmHandler(HWND a1, UINT msg, WPARAM wParam, HWND a4, LRESULT 
 {
     LPARAM lParam = (LPARAM)a4;
     uint16_t repeats = lParam & 0xFFFF;
+    uint16_t mouseX = lParam & 0xFFFF;
+    uint16_t mouseY = (lParam >> 16) & 0xFFFF;
 
     switch ( msg )
     {
@@ -712,6 +736,13 @@ int jkQuakeConsole_WmHandler(HWND a1, UINT msg, WPARAM wParam, HWND a4, LRESULT 
             }
             else if (!jkHud_bChatOpen && !jkQuakeConsole_bOpen) {
                 sithCommand_HandleBinds(wParam);
+            }
+            break;
+        case WM_LBUTTONDOWN:
+            if (jkQuakeConsole_bShowUpdateText && mouseX < jkQuakeConsole_updateTextWidth && mouseY < jkQuakeConsole_updateTextHeight)
+            {
+                jkQuakeConsole_bClickedUpdate = 1;
+                stdUpdater_DoUpdate();
             }
             break;
         default:

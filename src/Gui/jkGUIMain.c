@@ -109,7 +109,7 @@ void jkGuiMain_Show()
     jkGuiMain_elements[8].wstr = openjkdf2_waReleaseVersion;
     jkGuiMain_elements[9].wstr = openjkdf2_waReleaseCommitShort;
 
-    jkGui_SetModeMenu(jkGui_stdBitmaps[0]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->palette);
     if ( !jkGuiMain_bIdk || (jkGuiMain_bIdk = 0, jkGuiPlayer_ShowNewPlayer(1), !stdComm_dword_8321F8) || jkGuiMultiplayer_Show2() != 1 )
     {
         if (Main_bMotsCompat) {
@@ -134,8 +134,8 @@ void jkGuiMain_Show()
                     v1 = jkGuiMultiplayer_Show();
                     break;
                 case 12:
-                    v4 = jkStrings_GetText("GUI_QUITCONFIRM_Q");
-                    v2 = jkStrings_GetText("GUI_QUITCONFIRM");
+                    v4 = jkStrings_GetUniStringWithFallback("GUI_QUITCONFIRM_Q");
+                    v2 = jkStrings_GetUniStringWithFallback("GUI_QUITCONFIRM");
                     if ( !jkGuiDialog_YesNoDialog(v2, v4) )
                         goto LABEL_12;
 
@@ -198,9 +198,9 @@ void jkGuiMain_ShowCutscenes()
     char v12[256]; // [esp+6Ch] [ebp-100h] BYREF
 
     if ( !jkGuiCutscenes_initted )
-        jkGui_InitMenu(&jkGuiMain_cutscenesMenu, jkGui_stdBitmaps[3]);
+        jkGui_InitMenu(&jkGuiMain_cutscenesMenu, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
     jkGuiCutscenes_initted = 1;
-    jkGui_SetModeMenu(jkGui_stdBitmaps[0]->palette);
+    jkGui_SetModeMenu(jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]->palette);
     jkGuiRend_DarrayNewStr(&darray, 32, 1);
     if ( !jkPlayer_ReadConf(jkPlayer_playerShortName) )
     {
@@ -252,7 +252,7 @@ LABEL_17:
 
 void jkGuiMain_Startup()
 {
-    jkGui_InitMenu(&jkGuiMain_menu, jkGui_stdBitmaps[0]);
+    jkGui_InitMenu(&jkGuiMain_menu, jkGui_stdBitmaps[JKGUI_BM_BK_MAIN]);
 
     // Added: clean reset
     jkGuiMain_bIdk = 1;
@@ -278,7 +278,7 @@ void jkGuiMain_PopulateCutscenes(Darray *list, jkGuiElement *element)
         v3 = _strcpy((char *)pHS->alloc(_strlen(v2) + 1), v2);
         stdFnames_CopyShortName(key, 64, v3); // TODO aaaaaaa ??? disassembly was wrong?
         jkGuiTitle_sub_4189A0(key);
-        v5 = jkStrings_GetText2(key);
+        v5 = jkStrings_GetUniString(key);
         jkGuiRend_DarrayReallocStr(list, v5, (intptr_t)v3);
         v2 += 32;
     }

@@ -18,21 +18,9 @@
 #include "Platform/GL/shader_utils.h"
 #include "Platform/GL/jkgm.h"
 
-#ifdef MACOS
-#define GL_SILENCE_DEPRECATION
-#include <SDL.h>
-#elif defined(ARCH_WASM)
-#include <emscripten.h>
-#include <SDL.h>
-#include <SDL_opengles2.h>
-#else
-#include <SDL.h>
-#include <GL/gl.h>
-#endif
+#include "SDL2_helper.h"
 
 #ifdef WIN32
-#define GL_R8 GL_RED
-
 // Force Optimus/AMD to use non-integrated GPUs by default.
 __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
@@ -480,13 +468,13 @@ int init_resources()
     std3D_activeFb = 1;
     std3D_pFb = &std3D_framebuffers[0];
     
-    if ((programDefault = std3D_loadProgram("resource/shaders/default")) == 0) return false;
-    if ((programMenu = std3D_loadProgram("resource/shaders/menu")) == 0) return false;
-    if (!std3D_loadSimpleTexProgram("resource/shaders/ui", &std3D_uiProgram)) return false;
-    if (!std3D_loadSimpleTexProgram("resource/shaders/texfbo", &std3D_texFboStage)) return false;
-    if (!std3D_loadSimpleTexProgram("resource/shaders/blur", &std3D_blurStage)) return false;
-    if (!std3D_loadSimpleTexProgram("resource/shaders/ssao", &std3D_ssaoStage)) return false;
-    if (!std3D_loadSimpleTexProgram("resource/shaders/ssao_mix", &std3D_ssaoMixStage)) return false;
+    if ((programDefault = std3D_loadProgram("shaders/default")) == 0) return false;
+    if ((programMenu = std3D_loadProgram("shaders/menu")) == 0) return false;
+    if (!std3D_loadSimpleTexProgram("shaders/ui", &std3D_uiProgram)) return false;
+    if (!std3D_loadSimpleTexProgram("shaders/texfbo", &std3D_texFboStage)) return false;
+    if (!std3D_loadSimpleTexProgram("shaders/blur", &std3D_blurStage)) return false;
+    if (!std3D_loadSimpleTexProgram("shaders/ssao", &std3D_ssaoStage)) return false;
+    if (!std3D_loadSimpleTexProgram("shaders/ssao_mix", &std3D_ssaoMixStage)) return false;
 
     // Attributes/uniforms
     attribute_coord3d = std3D_tryFindAttribute(programDefault, "coord3d");
@@ -658,7 +646,9 @@ int std3D_Startup()
         return 1;
     }
 
+#ifdef TARGET_CAN_JKGM
     jkgm_startup();
+#endif
 
     memset(&std3D_ui_colormap, 0, sizeof(std3D_ui_colormap));
     rdColormap_LoadEntry("misc\\cmp\\UIColormap.cmp", &std3D_ui_colormap);
@@ -1454,21 +1444,13 @@ void std3D_DrawMapOverlay()
     glDepthFunc(GL_ALWAYS);
     glUseProgram(programMenu);
     
-    float menu_w, menu_h, menu_u, menu_v, menu_x;
-    menu_w = (double)Window_xSize;
-    menu_h = (double)Window_ySize;
-    menu_u = 1.0;
-    menu_v = 1.0;
-    menu_x = 0.0;
-    
-    int bFixHudScale = 0;
+    float menu_w = (double)Window_xSize;
+    float menu_h = (double)Window_ySize;
 
     if (!jkGame_isDDraw)
     {
         return;
     }
-    
-    bFixHudScale = 1;
 
     menu_w = Video_menuBuffer.format.width;
     menu_h = Video_menuBuffer.format.height;
@@ -3050,8 +3032,6 @@ int std3D_AddToTextureCache(stdVBuffer *vbuf, rdDDrawSurface *texture, int is_al
     }
 
     
-done_load:    
-    
     std3D_aLoadedSurfaces[std3D_loadedTexturesAmt] = texture;
     std3D_aLoadedTextures[std3D_loadedTexturesAmt++] = image_texture;
     /*ext->surfacebuf = image_data;
@@ -3361,9 +3341,6 @@ int std3D_AddBitmapToTextureCache(stdBitmap *texture, int mipIdx, int is_alpha_t
 #endif
         //glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, image_8bpp);
     }
-
-    
-done_load:    
     
     std3D_aUIBitmaps[cacheIdx] = texture;
     std3D_aUITextures[cacheIdx] = image_texture;
@@ -3464,7 +3441,7 @@ void std3D_UpdateSettings()
 // Added
 void std3D_Screenshot(const char* pFpath)
 {
-#ifndef ARCH_WASM
+#ifdef TARGET_CAN_JKGM
     if (!std3D_pFb) return;
 
     uint8_t* data = malloc(std3D_pFb->w * std3D_pFb->h * 3 * sizeof(uint8_t));

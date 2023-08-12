@@ -83,7 +83,7 @@ static jkGuiElement jkGuiNetHost_aElements[28] =
     { ELEMENT_TEXTBUTTON,   GUI_OK,  2, "GUI_OK", 3, { 420, 430, 200, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
     { ELEMENT_TEXTBUTTON,   GUI_CANCEL, 2, "GUI_CANCEL", 3, { 20, 430, 200, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
 #ifdef QOL_IMPROVEMENTS
-    { ELEMENT_TEXT, 0, 0, L"Server Port:", 2, { 540, 80, 90, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
+    { ELEMENT_TEXT, 0, 0, "GUIEXT_SERVER_PORT", 2, { 540, 80, 90, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
     { ELEMENT_TEXTBOX, 0, 0, NULL, 16, { 540, 125, 90, 20 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
     
 #endif
@@ -102,8 +102,8 @@ static jkGuiElement jkGuiNetHost_aSettingsElements[9] =
     { ELEMENT_TEXT, 0, 0, "GUI_TICKRATE", 2, { 70, 230, 200, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
     { ELEMENT_TEXTBOX, 0, 0, NULL, 0, { 280, 240, 50, 20 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
 #ifdef QOL_IMPROVEMENTS
-    { ELEMENT_CHECKBOX, 0, 0, L"Dedicated Server", 0, { 70, 270, 200, 40 }, 1, 0, L"Launch server without participating as a player.", NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
-    { ELEMENT_CHECKBOX, 0, 0, L"Experimental Co-op", 0, { 70, 300, 200, 40 }, 1, 0, L"Launch server with actors enabled.", NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
+    { ELEMENT_CHECKBOX, 0, 0, "GUIEXT_DEDICATED_SERVER", 0, { 70, 270, 200, 40 }, 1, 0, "GUIEXT_DEDICATED_SERVER_HINT", NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
+    { ELEMENT_CHECKBOX, 0, 0, "GUIEXT_COOP", 0, { 70, 300, 200, 40 }, 1, 0, "GUIEXT_COOP_HINT", NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
 #endif
     { ELEMENT_TEXTBUTTON, GUI_OK, 2, "GUI_OK", 3, { 420, 430, 200, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
     { ELEMENT_TEXTBUTTON, GUI_CANCEL, 2, "GUI_CANCEL", 3, { 20, 430, 200, 40 }, 1, 0, NULL, NULL, NULL, NULL, { 0, 0, 0, 0, 0, { 0, 0, 0, 0 } }, 0 },
@@ -265,8 +265,8 @@ void jkGuiNetHost_LoadSettings()
 
 void jkGuiNetHost_Startup()
 {
-    jkGui_InitMenu(&jkGuiNetHost_menu, jkGui_stdBitmaps[2]);
-    jkGui_InitMenu(&jkGuiNetHost_menuSettings, jkGui_stdBitmaps[3]);
+    jkGui_InitMenu(&jkGuiNetHost_menu, jkGui_stdBitmaps[JKGUI_BM_BK_MULTI]);
+    jkGui_InitMenu(&jkGuiNetHost_menuSettings, jkGui_stdBitmaps[JKGUI_BM_BK_SETUP]);
     
     jkGuiNetHost_LoadSettings();
     jkGuiNetHost_bInitted = 1;
@@ -321,7 +321,7 @@ int jkGuiNetHost_Show(jkMultiEntry3 *pMultiEntry)
     jkGuiNetHost_aElements[NETHOST_TEAMMODE_CHECKBOX].selectedTextEntry = jkGuiNetHost_gameFlags & MULTIMODEFLAG_TEAMS;
     if ( !jkGuiNetHost_gameName[0] )
     {
-        jk_snwprintf(jkGuiNetHost_gameName, 0x20u, jkStrings_GetText("GUI_DEFAULT_GAME_NAME"), jkPlayer_playerShortName);
+        jk_snwprintf(jkGuiNetHost_gameName, 0x20u, jkStrings_GetUniStringWithFallback("GUI_DEFAULT_GAME_NAME"), jkPlayer_playerShortName);
     }
     jkGuiNetHost_aElements[NETHOST_GAMENAME_TEXTBOX].wstr = jkGuiNetHost_gameName;
     jkGuiNetHost_aElements[NETHOST_GAMENAME_TEXTBOX].selectedTextEntry = 16;
@@ -345,7 +345,7 @@ int jkGuiNetHost_Show(jkMultiEntry3 *pMultiEntry)
     jkGuiNetHost_aElements[NETHOST_TIMELIMIT_TEXTBOX].wstr = v26;
     jkGuiNetHost_aElements[NETHOST_TIMELIMIT_TEXTBOX].selectedTextEntry = 4;
     __snprintf(v29, 32, "RANK_%d_L", jkGuiNetHost_maxRank); // sprintf -> snprintf
-    jk_snwprintf(jkGuiNetHost_wstrStarsText, 0x80u, jkStrings_GetText("GUI_RANK"), jkGuiNetHost_maxRank, jkStrings_GetText(v29));
+    jk_snwprintf(jkGuiNetHost_wstrStarsText, 0x80u, jkStrings_GetUniStringWithFallback("GUI_RANK"), jkGuiNetHost_maxRank, jkStrings_GetUniStringWithFallback(v29));
     memset(v30, 0, sizeof(v30));
     jkGuiNetHost_aElements[NETHOST_STARS_TEXT].wstr = jkGuiNetHost_wstrStarsText;
     jkGuiNetHost_aElements[NETHOST_PASSWORD_TEXTBOX].wstr = v30;
@@ -361,7 +361,7 @@ int jkGuiNetHost_Show(jkMultiEntry3 *pMultiEntry)
     jkGuiRend_DarrayNewStr(&jkGuiNetHost_dArray2, 10, 1);
     jkGuiRend_DarrayReallocStr(&jkGuiNetHost_dArray2, 0, 0);
     jkGuiRend_SetClickableString(&jkGuiNetHost_aElements[NETHOST_LEVEL_LISTBOX], &jkGuiNetHost_dArray2);
-    jkGuiNetHost_aElements[NETHOST_EPISODE_LISTBOX].func = jkGuiNetHost_sub_4119D0;
+    jkGuiNetHost_aElements[NETHOST_EPISODE_LISTBOX].clickHandlerFunc = jkGuiNetHost_sub_4119D0;
     jkGui_sub_412E20(&jkGuiNetHost_menu, 100, 101, 101);
     jkGuiRend_MenuSetReturnKeyShortcutElement(&jkGuiNetHost_menu, &jkGuiNetHost_aElements[23]);
     jkGuiRend_MenuSetEscapeKeyShortcutElement(&jkGuiNetHost_menu, &jkGuiNetHost_aElements[24]);
@@ -539,7 +539,7 @@ int jkGuiNetHost_sub_4119D0(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
     else
     {
         jkGuiRend_DarrayFreeEntry(&jkGuiNetHost_dArray2);
-        jkGuiRend_DarrayReallocStr(&jkGuiNetHost_dArray2, jkStrings_GetText("GUI_NO_LEVELS_IN_EPISODE"), 0);
+        jkGuiRend_DarrayReallocStr(&jkGuiNetHost_dArray2, jkStrings_GetUniStringWithFallback("GUI_NO_LEVELS_IN_EPISODE"), 0);
         jkGuiRend_DarrayReallocStr(&jkGuiNetHost_dArray2, 0, 0);
         jkGuiRend_SetClickableString(&jkGuiNetHost_aElements[NETHOST_LEVEL_LISTBOX], &jkGuiNetHost_dArray2);
     }
@@ -582,9 +582,9 @@ int jkGuiNetHost_sub_411AE0(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
         if ( jkGuiNetHost_maxRank )
         {
             stdString_snprintf(v12, 32, "RANK_%d_L", --jkGuiNetHost_maxRank);
-            v11 = jkStrings_GetText(v12);
+            v11 = jkStrings_GetUniStringWithFallback(v12);
             v9 = jkGuiNetHost_maxRank;
-            v7 = jkStrings_GetText("GUI_RANK");
+            v7 = jkStrings_GetUniStringWithFallback("GUI_RANK");
             jk_snwprintf(jkGuiNetHost_wstrStarsText, 0x80u, v7, v9, v11);
             jkGuiNetHost_aElements[NETHOST_STARS_TEXT].wstr = jkGuiNetHost_wstrStarsText;
             jkGuiRend_UpdateAndDrawClickable(&jkGuiNetHost_aElements[NETHOST_STARS_TEXT], pMenu, 1);
@@ -593,7 +593,7 @@ int jkGuiNetHost_sub_411AE0(jkGuiElement *pElement, jkGuiMenu *pMenu, int mouseX
     else if ( pElement->hoverId == 2 && (unsigned int)jkGuiNetHost_maxRank < 8 )
     {
         stdString_snprintf(v12, 32, "RANK_%d_L", ++jkGuiNetHost_maxRank);
-        jk_snwprintf(jkGuiNetHost_wstrStarsText, 0x80u, jkStrings_GetText("GUI_RANK"), jkGuiNetHost_maxRank, jkStrings_GetText(v12));
+        jk_snwprintf(jkGuiNetHost_wstrStarsText, 0x80u, jkStrings_GetUniStringWithFallback("GUI_RANK"), jkGuiNetHost_maxRank, jkStrings_GetUniStringWithFallback(v12));
         jkGuiNetHost_aElements[NETHOST_STARS_TEXT].wstr = jkGuiNetHost_wstrStarsText;
         jkGuiRend_UpdateAndDrawClickable(&jkGuiNetHost_aElements[NETHOST_STARS_TEXT], pMenu, 1);
         return 0;

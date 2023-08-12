@@ -251,7 +251,7 @@ skip_free_things:
         jkPlayer_InitSaber();
         sithMain_AutoSave();
 
-        jkGuiDialog_ErrorDialog(jkStrings_GetText("ERROR"), L"This save is outdated and cannot be loaded fully. The level will be restarted with your existing inventory and progress.");
+        jkGuiDialog_ErrorDialog(jkStrings_GetUniStringWithFallback("ERROR"), L"This save is outdated and cannot be loaded fully. The level will be restarted with your existing inventory and progress.");
 
         goto skip_dss;
     }
@@ -325,8 +325,9 @@ int sithGamesave_SerializeAllThings(int mpFlags)
 
     for (uint32_t i = 0; i < 256; i++) // TODO define this maximum
     {
-        if ( sithAI_actors[i].aiclass )
+        if ( sithAI_actors[i].pAIClass ) {
             sithDSS_SendAIStatus(&sithAI_actors[i], 0, mpFlags);
+        }
     }
 
     for (uint32_t i = 0; i < sithWorld_pCurrentWorld->numCogsLoaded; i++)
@@ -504,7 +505,7 @@ int sithGamesave_Flush()
             sithGamesave_saveName[127] = 0;
             _wcsncpy(sithGamesave_wsaveName, sithGamesave_headerTmp.saveName, 0xFFu);
             sithGamesave_wsaveName[255] = 0;
-            sithConsole_PrintUniStr(sithStrTable_GetString("GAME_SAVED"));
+            sithConsole_PrintUniStr(sithStrTable_GetUniStringWithFallback("GAME_SAVED"));
         }
         sithComm_multiplayerFlags = multiplayerFlagsSave;
     }

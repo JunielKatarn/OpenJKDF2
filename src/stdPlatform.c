@@ -14,6 +14,8 @@
 #include "external/fcaseopen/fcaseopen.h"
 #endif
 
+#include "SDL2_helper.h"
+
 #ifdef PLATFORM_POSIX
 uint32_t Linux_TimeMs()
 {
@@ -199,10 +201,22 @@ int stdPrintf(void* a1, char *a2, int line, char *fmt, ...)
     return ret;
 }
 
+#ifdef SDL2_RENDER
+static SDL_mutex* stdPlatform_mtxPrintf = NULL;
+#endif
+
 int stdPlatform_Printf(const char *fmt, ...)
 {
     char tmp[256];
     va_list args;
+
+#ifdef SDL2_RENDER
+    if (!stdPlatform_mtxPrintf)
+        stdPlatform_mtxPrintf = SDL_CreateMutex();
+
+    SDL_LockMutex(stdPlatform_mtxPrintf);
+#endif
+    
     va_start (args, fmt);
     int ret = vprintf(fmt, args);
     va_end (args);
@@ -211,7 +225,14 @@ int stdPlatform_Printf(const char *fmt, ...)
     vsnprintf(tmp, sizeof(tmp), fmt, args);
     jkQuakeConsole_PrintLine(tmp);
 
+#ifdef TARGET_ANDROID
+    LOGI("%s", tmp);
+#endif
+
     va_end (args);
+#ifdef SDL2_RENDER
+    SDL_UnlockMutex(stdPlatform_mtxPrintf);
+#endif
     return ret;
 }
 #endif

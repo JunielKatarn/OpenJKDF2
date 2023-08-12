@@ -157,6 +157,11 @@ extern int jkPlayer_bKeepCorpses;
 extern int jkPlayer_bFastMissionText;
 extern int jkPlayer_bUseOldPlayerPhysics;
 
+extern int jkPlayer_setCrosshairOnLightsaber;
+extern int jkPlayer_setCrosshairOnFist;
+
+extern int jkPlayer_bHasLoadedSettingsOnce;
+
 #define FOV_MIN (40)
 #define FOV_MAX (170)
 

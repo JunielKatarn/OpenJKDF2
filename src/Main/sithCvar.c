@@ -5,6 +5,7 @@
 #include "General/stdJSON.h"
 #include "Main/jkHud.h"
 #include "World/jkPlayer.h"
+#include "Platform/Common/stdUpdater.h"
 #include "stdPlatform.h"
 #include "jk.h"
 
@@ -26,6 +27,9 @@ int sithCvar_Startup()
     sithCvar_bInitted = 1;
 
     jkPlayer_StartupVars();
+    stdUpdater_StartupCvars();
+
+    sithCvar_LoadGlobals();
 
     return 1;
 }
@@ -64,6 +68,17 @@ int sithCvar_SaveVar(tSithCvar* pCvar, const char* pFpath)
     if (!pCvar) return 0;
     sithCvar_UpdateValInternal(pCvar);
 
+    // Don't save defaults, so that stuff like the updater URL can change easily.
+    if (pCvar->flags & CVARFLAG_UPDATABLE_DEFAULT)
+    {
+        if (pCvar->type == CVARTYPE_STR && pCvar->pStrVal && pCvar->defaultVal && !strcmp(pCvar->pStrVal, pCvar->pDefaultStrVal)) {
+            return 1;
+        }
+        else if (pCvar->type != CVARTYPE_STR && pCvar->val == pCvar->defaultVal) {
+            return 1;
+        }
+    }
+
     switch (pCvar->type) {
         case CVARTYPE_BOOL:
             stdJSON_SaveBool(pFpath, pCvar->pName, pCvar->boolVal);
@@ -80,6 +95,7 @@ int sithCvar_SaveVar(tSithCvar* pCvar, const char* pFpath)
         default:
             return 0;
     }
+
     return 1;
 }
 
@@ -87,7 +103,6 @@ int sithCvar_LoadVar(tSithCvar* pCvar, const char* pFpath)
 {
     char tmp[SITHCVAR_MAX_STRLEN];
     if (!pCvar) return 0;
-    sithCvar_UpdateValInternal(pCvar);
 
     switch (pCvar->type) {
         case CVARTYPE_BOOL:
@@ -100,12 +115,16 @@ int sithCvar_LoadVar(tSithCvar* pCvar, const char* pFpath)
             pCvar->flexVal = stdJSON_GetFloat(pFpath, pCvar->pName, pCvar->flexVal);
             break;
         case CVARTYPE_STR:
+            memset(tmp, 0, SITHCVAR_MAX_STRLEN);
             stdJSON_GetString(pFpath, pCvar->pName, tmp, SITHCVAR_MAX_STRLEN, pCvar->pStrVal);
+            memset((char*)pCvar->pStrVal, 0, SITHCVAR_MAX_STRLEN);
             stdString_SafeStrCopy(pCvar->pStrVal, tmp, SITHCVAR_MAX_STRLEN);
             break;
         default:
             return 0;
     }
+
+    sithCvar_UpdateLinkInternal(pCvar);
     return 1;
 }
 
@@ -409,6 +428,7 @@ int sithCvar_UpdateLinkInternal(tSithCvar* pCvar)
             *(float*)pCvar->pLinkPtr = pCvar->flexVal;
             break;
         case CVARTYPE_STR:
+            memset((char*)pCvar->pLinkPtr, 0, SITHCVAR_MAX_STRLEN);
             stdString_SafeStrCopy((char*)pCvar->pLinkPtr, pCvar->pStrVal, SITHCVAR_MAX_STRLEN);
             break;
     }

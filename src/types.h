@@ -10,6 +10,28 @@ extern "C" {
 #define AL_SILENCE_DEPRECATION
 #endif
 
+// Ghidra tutorial:
+// File > Parse C Source...
+//
+// Select VisualStudio12_32.prf
+// Click second top-right button "Save profile to new name"
+// Name it JK, JKM, DW, etc
+//
+// Hit + button
+// Add this file as a header
+//
+// Add the following to the parse options:
+// -DGHIDRA_IMPORT
+//
+// For JKM:
+// -DJKM_TYPES
+//
+// For DroidWorks:
+// -DDW_TYPES
+//
+// Parse to Program and Save
+// In Data Type Manager, right click the EXE and Apply Function Data Types
+
 #ifdef GHIDRA_IMPORT
 typedef char int8_t;
 typedef unsigned char uint8_t;
@@ -31,6 +53,10 @@ typedef uint32_t size_t;
 #define JKM_SABER
 #define JKM_DSS
 #define JKM_CAMERA
+#endif
+
+#ifdef DW_TYPES
+#define DW_LASERS
 #endif
 
 #include "types_win_enums.h"
@@ -313,19 +339,19 @@ typedef struct stdControlKeyInfoEntry stdControlKeyInfoEntry;
 #ifndef SDL2_RENDER
 typedef IDirectSoundBuffer stdSound_buffer_t;
 typedef IDirectSound3DBuffer stdSound_3dBuffer_t;
-#else // OPENAL_SOUND
+#else // STDSOUND_OPENAL
 
-#ifdef OPENAL_SOUND
+#ifdef STDSOUND_OPENAL
 typedef stdALBuffer stdSound_buffer_t;
 typedef stdALBuffer stdSound_3dBuffer_t;
 #endif
 
-#ifdef NULL_SOUND
+#ifdef STDSOUND_NULL
 typedef stdNullSoundBuffer stdSound_buffer_t;
 typedef stdNullSoundBuffer stdSound_3dBuffer_t;
 #endif 
 
-#endif // OPENAL_SOUND
+#endif // STDSOUND_OPENAL
 
 typedef rdModel3* (*model3Loader_t)(const char *, int);
 typedef int (*model3Unloader_t)(rdModel3*);
@@ -348,6 +374,7 @@ extern int openjkdf2_restartMode;
 extern char openjkdf2_aRestartPath[256];
 extern int Main_bMotsCompat;
 extern int Main_bDwCompat;
+extern char* openjkdf2_pExecutablePath;
 
 // All the typedefs
 typedef struct rdVector2i
@@ -448,9 +475,9 @@ typedef struct rdCamera
     float fov_y;
     float screenAspectRatio;
     float orthoScale;
-    rdClipFrustum *cameraClipFrustum;
-    void (*project)(rdVector3 *, rdVector3 *);
-    void (*projectLst)(rdVector3 *, rdVector3 *, unsigned int);
+    rdClipFrustum *pClipFrustum;
+    void (*fnProject)(rdVector3 *, rdVector3 *);
+    void (*fnProjectLst)(rdVector3 *, rdVector3 *, unsigned int);
     float ambientLight;
     int numLights;
     rdLight* lights[64];
@@ -494,7 +521,7 @@ typedef struct rdJoint
     char mesh_name[32];
     uint32_t nodeIdx;
     uint32_t numAnimEntries;
-    rdAnimEntry* animEntries;
+    rdAnimEntry* paAnimEntries;
 } rdJoint;
 
 typedef struct rdKeyframe
@@ -507,7 +534,7 @@ typedef struct rdKeyframe
     float fps;
     uint32_t numFrames;
     uint32_t numJoints2;
-    rdJoint* joints;
+    rdJoint* paJoints;
     uint32_t numMarkers;
     rdMarkers markers;
 } rdKeyframe;
@@ -1959,6 +1986,8 @@ typedef struct sithArchLight
 
 typedef void (__cdecl *sithWorldProgressCallback_t)(float);
 
+typedef struct sDwLaser tDwLaser;
+
 typedef struct sithWorld
 {
     uint32_t level_type_maybe;
@@ -2040,7 +2069,21 @@ typedef struct sithWorld
     //int sizeArchLights;
     sithArchLight* aArchlights;
 #endif
+#ifdef DW_LASERS
+    sDwLaser* paLasers;
+    sDwLaser* pLastLaser;
+#endif
 } sithWorld;
+
+typedef struct sDwLaser
+{
+    uint32_t field_0;
+    uint32_t field_4;
+    uint32_t pad[0xF];
+    uint32_t pad2[0x10];
+    uint32_t pad3[0x10];
+    uint32_t pad4[0x8];
+} tDwLaser;
 
 typedef int (*sithWorldSectionParser_t)(sithWorld*, int);
 
@@ -2058,8 +2101,10 @@ typedef struct sithItemDescriptor
     float ammoMin;
     float ammoMax;
     sithCog* cog;
+#ifndef DW_TYPES
     uint32_t field_90;
     uint32_t field_94;
+#endif
     stdBitmap* hudBitmap;
 } sithItemDescriptor;
 
@@ -2169,19 +2214,31 @@ typedef struct rdPuppet
 
 typedef struct sithPlayerInfo
 {
+#ifndef DW_TYPES
     wchar_t player_name[32];
     wchar_t multi_name[32];
+#endif
     uint32_t flags;
     uint32_t net_id;
+
+#ifdef DW_TYPES
+    sithItemInfo iteminfo[32];
+    int pad[0x6C];
+#else
     sithItemInfo iteminfo[200];
+#endif
     int curItem;
     int curWeapon;
     int curPower;
+#ifndef DW_TYPES
     int field_1354;
+#endif
     sithThing* playerThing;
     rdMatrix34 spawnPosOrient;
     sithSector* pSpawnSector;
+#ifndef DW_TYPES
     uint32_t respawnMask;
+#endif
     uint32_t palEffectsIdx1;
     uint32_t palEffectsIdx2;
     uint32_t teamNum;
@@ -2319,8 +2376,8 @@ typedef struct sithSector
     rdVector3 boundingbox_onecorner;
     rdVector3 boundingbox_othercorner;
     float radius;
-    uint32_t field_8C;
-    uint32_t field_90;
+    uint32_t renderTick;
+    uint32_t clipVisited;
     rdClipFrustum* clipFrustum;
 } sithSector;
 
@@ -2357,7 +2414,7 @@ typedef struct sithActorInstinct
 typedef struct sithActor
 {
     sithThing *thing;
-    sithAIClass *aiclass;
+    sithAIClass *pAIClass;
     int flags;
     sithActorInstinct instincts[16];
     uint32_t numAIClassEntries;
@@ -2370,18 +2427,18 @@ typedef struct sithActor
     rdVector3 field_1AC;
     float field_1B8;
     float moveSpeed;
-    sithThing* field_1C0;
+    sithThing* pFleeThing;
     rdVector3 field_1C4;
     sithThing* pDistractor;
     rdVector3 field_1D4;
     int field_1E0;
-    rdVector3 field_1E4;
-    float field_1F0;
+    rdVector3 attackError;
+    float attackDistance;
     int field_1F4;
     rdVector3 field_1F8;
     int field_204;
     rdVector3 blindAimError;
-    sithThing *thingidk;
+    sithThing *pMoveThing;
     rdVector3 movepos;
     int field_224;
     rdVector3 field_228;
@@ -2402,7 +2459,7 @@ typedef struct sithActor
     int field_284;
     int field_288;
     int field_28C;
-    rdVector3 *framesAlloc;
+    rdVector3 *paFrames;
     int loadedFrames;
     int sizeFrames;
 } sithActor;
@@ -2725,7 +2782,7 @@ typedef struct sithThing
     uint32_t field_260;
     float waggle;
     rdVector3 field_268;
-    sithAIClass* aiclass;
+    sithAIClass* pAIClass;
     sithActor* actor;
     char template_name[32];
     sithCog* class_cog;
@@ -2763,7 +2820,7 @@ typedef struct Darray
 
 typedef void (*jkGuiDrawFunc_t)(jkGuiElement*, jkGuiMenu*, stdVBuffer*, int);
 typedef int (*jkGuiEventHandlerFunc_t)(jkGuiElement*, jkGuiMenu*, int, int);
-typedef int (*jkGuiClickHandlerFunc_t)(jkGuiElement*, jkGuiMenu*, int, int, int);
+typedef int (*jkGuiClickHandlerFunc_t)(jkGuiElement*, jkGuiMenu*, int mouseX, int mouseY, int);
 
 typedef struct jkGuiElementHandlers
 {
@@ -2786,7 +2843,7 @@ typedef struct jkGuiElement
 {
     int type;
     int hoverId;
-    int field_8;
+    int textType;
 
 // Added: Allow soft-resetting of these fields easily
 #ifdef QOL_IMPROVEMENTS
@@ -2818,7 +2875,7 @@ typedef struct jkGuiElement
     };
     rdRect rect;
     int bIsVisible;
-    int anonymous_9;
+    BOOL enableHover;
 
 // Added: Allow soft-resetting of these fields easily
 #ifdef QOL_IMPROVEMENTS
@@ -2837,8 +2894,12 @@ typedef struct jkGuiElement
     };
 #endif
     jkGuiDrawFunc_t drawFuncOverride;
-    jkGuiClickHandlerFunc_t func;
-    void *anonymous_13;
+    jkGuiClickHandlerFunc_t clickHandlerFunc;
+    union
+    {
+         int* uiBitmaps;
+         int oldForcePoints;
+    };
     jkGuiTexInfo texInfo;
     int clickShortcutScancode;
 
@@ -2887,14 +2948,14 @@ typedef struct jkGuiMenu
 {
   jkGuiElement *paElements;
   int clickableIdxIdk;
-  int anonymous_1;
+  int textBoxCursorColor;
   int fillColor;
-  int anonymous_3;
+  int checkboxBitmapIdx;
   stdVBuffer *texture;
   uint8_t* palette;
   stdBitmap **ui_structs;
   stdFont** fonts;
-  intptr_t anonymous_7;
+  intptr_t paddings;
   void (__cdecl *idkFunc)(jkGuiMenu *);
   char *soundHover;
   char *soundClick;
@@ -3362,7 +3423,6 @@ typedef void (*sithCvarEnumerationFn_t)(tSithCvar*);
 #ifdef GHIDRA_IMPORT
 #include "Win95/stdGob.h"
 #include "Engine/rdKeyframe.h"
-#include "Engine/sithAdjoin.h"
 #include "Engine/rdCanvas.h"
 #include "Engine/sithKeyFrame.h"
 #include "Engine/sithAnimClass.h"
@@ -3372,7 +3432,6 @@ typedef void (*sithCvarEnumerationFn_t)(tSithCvar*);
 #include "General/stdFileUtil.h"
 #include "General/stdPcx.h"
 #include "Cog/sithCog.h"
-#include "Cog/sithCogScript.h"
 #include "Dss/sithMulti.h"
 
 #include "Cog/sithCog.h"

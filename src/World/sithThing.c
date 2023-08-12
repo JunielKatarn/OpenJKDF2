@@ -2,6 +2,7 @@
 
 #include "General/stdHashTable.h"
 #include "General/util.h"
+#include "General/stdString.h"
 #include "World/jkPlayer.h"
 #include "World/sithWorld.h"
 #include "Gameplay/sithPlayerActions.h"
@@ -469,23 +470,23 @@ float sithThing_Damage(sithThing *sender, sithThing *reciever, float amount, int
 
 //sithThing_Create_idk
 
-void sithThing_Free(sithWorld *world)
+void sithThing_Free(sithWorld *pWorld)
 {
     // Added: !world check
-    if (!world || !world->things)
+    if (!pWorld || !pWorld->things)
     {
         return;
     }
 
-    sithThing_freestuff(world);
+    sithThing_freestuff(pWorld);
 
-    pSithHS->free(world->things);
-    world->things = 0;
-    world->numThingsLoaded = 0;
-    world->numThings = -1;
+    pSithHS->free(pWorld->things);
+    pWorld->things = 0;
+    pWorld->numThingsLoaded = 0;
+    pWorld->numThings = -1;
 }
 
-void sithThing_freestuff(sithWorld *world)
+void sithThing_freestuff(sithWorld *pWorld)
 {
     sithThing* pThingIter; // esi
     sithWorld *v3; // edx
@@ -493,12 +494,13 @@ void sithThing_freestuff(sithWorld *world)
     int v5; // eax
     int v7; // eax
 
-    if (!world->things)
+    // Added: !world check
+    if (!pWorld || !pWorld->things)
         return;
 
-    for (int v9 = 0; v9 < world->numThingsLoaded; v9++)
+    for (int v9 = 0; v9 < pWorld->numThingsLoaded; v9++)
     {
-        pThingIter = &world->things[v9];
+        pThingIter = &pWorld->things[v9];
         if (!pThingIter->type)
             continue;
 
@@ -1469,7 +1471,7 @@ void sithThing_detachallchildren(sithThing* pThing)
 //sithThing_LotsOfFreeing
 
 // MOTS altered
-int sithThing_Load(sithWorld *world, int a2)
+int sithThing_Load(sithWorld *pWorld, int a2)
 {
     sithThing *v4; // esi
     int v5; // esi
@@ -1486,7 +1488,6 @@ int sithThing_Load(sithWorld *world, int a2)
     sithThing *v22; // ebx
     int v23; // eax
     sithSector *v24; // edi
-    int v25; // eax
     int v26; // ecx
     int v27; // edi
     stdConffileArg *v28; // ebx
@@ -1497,11 +1498,11 @@ int sithThing_Load(sithWorld *world, int a2)
     int v38; // [esp+64h] [ebp+8h]
 
     sithThing_bInitted2 = 1;
-    if ( a2 && world->things )
+    if ( a2 && pWorld->things )
     {
-        for (v36 = 0; v36 < world->numThingsLoaded; v36++)
+        for (v36 = 0; v36 < pWorld->numThingsLoaded; v36++)
         {
-            v4 = &world->things[v36];
+            v4 = &pWorld->things[v36];
             if ( v4->type )
             {
                 if ( sithNet_isMulti && sithNet_isServer && (v4->thing_id & 0xFFFF0000) == 0 )
@@ -1520,10 +1521,10 @@ int sithThing_Load(sithWorld *world, int a2)
                 sithNet_things[1 + sithNet_thingsIdx++] = v5;
             }
         }
-        pSithHS->free(world->things);
-        world->things = 0;
-        world->numThingsLoaded = 0;
-        world->numThings = -1;
+        pSithHS->free(pWorld->things);
+        pWorld->things = 0;
+        pWorld->numThingsLoaded = 0;
+        pWorld->numThings = -1;
     }
     stdConffile_ReadArgs();
     if ( _strcmp(stdConffile_entry.args[0].value, "world") )
@@ -1590,11 +1591,9 @@ int sithThing_Load(sithWorld *world, int a2)
                 sithThing_SetPosAndRot(v21, &pos, &a);
                 sithThing_EnterSector(v21, v24, 1, 1);
                 sithThing_sub_4CD100(v21);
-                v25 = sithThing_bInitted2;
                 v26 = v21->thingIdx;
-                v21->signature = sithThing_bInitted2;
+                v21->signature = sithThing_bInitted2++;
                 v21->thing_id = v26;
-                sithThing_bInitted2 = v25 + 1;
                 v27 = 10;
                 if ( stdConffile_entry.numArgs > 10 )
                 {
@@ -1613,8 +1612,7 @@ int sithThing_Load(sithWorld *world, int a2)
                 }
                 else
                 {
-                    _strncpy(v21->template_name, stdConffile_entry.args[2].value, 0x1Fu);
-                    v21->template_name[31] = 0;
+                    stdString_SafeStrCopy(v21->template_name, stdConffile_entry.args[2].value, 0x20);
                 }
             }
         }
@@ -1863,11 +1861,11 @@ int sithThing_LoadThingParam(stdConffileArg *arg, sithThing* pThing, int param)
         case THINGPARAM_AICLASS:
             pThing->thingtype = SITH_THING_ACTOR;
             pAIClass = sithAIClass_Load(arg->value);
-            pThing->aiclass = pAIClass;
+            pThing->pAIClass = pAIClass;
             pActor = pThing->actor;
             if ( !pActor || !pAIClass )
                 goto LABEL_58;
-            pActor->aiclass = pAIClass;
+            pActor->pAIClass = pAIClass;
             pActor->numAIClassEntries = pAIClass->numEntries;
             result = 1;
             break;
@@ -2040,7 +2038,7 @@ void sithThing_Sync()
 
         // Added: Co-op
         if (sithMulti_multiModeFlags & MULTIMODEFLAG_COOP && (v1 & THING_SYNC_AI)) {
-            if (sithNet_aSyncThings[v0]->actor && sithNet_aSyncThings[v0]->actor->aiclass)
+            if (sithNet_aSyncThings[v0]->actor && sithNet_aSyncThings[v0]->actor->pAIClass)
                 sithDSS_SendAIStatus(sithNet_aSyncThings[v0]->actor, -1, 1);
         }
 

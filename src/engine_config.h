@@ -149,6 +149,20 @@
 #define SITHCAMERA_NUMCAMERAS (7)
 #endif
 
+#define SITHCAMERA_FOV (90.0)
+#define SITHCAMERA_ASPECT (1.0)
+#define SITHCAMERA_ATTENUATION_MIN (0.4)
+#define SITHCAMERA_ATTENUATION_MAX (0.8)
+#ifdef SDL2_RENDER
+#define SITHCAMERA_ZNEAR_FIRSTPERSON (1.0 / 128.0)
+#define SITHCAMERA_ZNEAR (1.0 / 64.0)
+#define SITHCAMERA_ZFAR (128.0)
+#else
+#define SITHCAMERA_ZNEAR_FIRSTPERSON (1.0 / 64.0)
+#define SITHCAMERA_ZNEAR (1.0 / 64.0)
+#define SITHCAMERA_ZFAR (64.0)
+#endif
+
 #define SITHPARTICLE_MAX_PARTICLES (64)
 
 #ifdef SDL2_RENDER
@@ -204,12 +218,26 @@
 #define SITHCVAR_MAX_STRLEN (256)
 #define SITHCVAR_FNAME ("openjkdf2_cvars.json")
 
+#define STDUPDATER_DEFAULT_URL ("https://api.github.com/repos/shinyquagsire23/OpenJKDF2/releases?per_page=1")
+#define STDUPDATER_DEFAULT_WIN64_FILENAME ("win64-debug.zip")
+#define STDUPDATER_DEFAULT_MACOS_FILENAME ("macos-debug.tar.gz")
+
 #define DF2_ONLY_COND(cond) ( Main_bMotsCompat || (!Main_bMotsCompat && (cond)) )
 #define MOTS_ONLY_COND(cond) ( !Main_bMotsCompat || (Main_bMotsCompat && (cond)) )
 #define MOTS_ONLY_FLAG(_flag) (Main_bMotsCompat ? (_flag) : (0))
 
 #define COMPAT_SAVE_VERSION (Main_bMotsCompat ? 0x7D6 : 0x6)
 #define JKSAVE_FORMATSTR (Main_bMotsCompat ? "msav%04d.jks" : "save%04d.jks")
+
+extern int Window_isHiDpi;
+#ifdef WIN64_STANDALONE
+#define WINDOW_DEFAULT_WIDTH  (640*2)
+#define WINDOW_DEFAULT_HEIGHT (480*2)
+#else // WIN64_STANDALONE
+#define WINDOW_DEFAULT_WIDTH  (640)
+#define WINDOW_DEFAULT_HEIGHT (480)
+#endif // WIN64_STANDALONE
+
 
 // Disable warnings for Vegetable Studio
 #if 1 && defined _MSC_VER

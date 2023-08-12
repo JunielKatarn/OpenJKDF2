@@ -67,13 +67,17 @@
 #include "General/stdJSON.h"
 #include "Dss/jkDSS.h"
 #include "Main/InstallHelper.h"
+#include "sithCvar.h"
+
+#include "Platform/Common/stdHttp.h"
+#include "Platform/Common/stdUpdater.h"
 
 #if defined(PLATFORM_POSIX)
 #include <locale.h>
 #endif
 
 #if defined(SDL2_RENDER)
-#include <SDL.h>
+#include "SDL2_helper.h"
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -171,11 +175,11 @@ int Main_StartupDedicated()
               v34.maxRank);
     if ( v21 == 0x88770118 )
     {
-        jkGuiDialog_ErrorDialog(jkStrings_GetText("GUINET_HOSTERROR"), jkStrings_GetText("GUINET_USERCANCEL"));
+        jkGuiDialog_ErrorDialog(jkStrings_GetUniStringWithFallback("GUINET_HOSTERROR"), jkStrings_GetUniStringWithFallback("GUINET_USERCANCEL"));
     }
     else if ( v21 )
     {
-        jkGuiDialog_ErrorDialog(jkStrings_GetText("GUINET_HOSTERROR"), jkStrings_GetText("GUINET_NOCONNECT"));
+        jkGuiDialog_ErrorDialog(jkStrings_GetUniStringWithFallback("GUINET_HOSTERROR"), jkStrings_GetUniStringWithFallback("GUINET_NOCONNECT"));
     }
     
     std3D_StartScene();
@@ -292,6 +296,8 @@ int Main_Startup(const char *cmdline)
     
     wuRegistry_Startup(HKEY_LOCAL_MACHINE, "Software\\LucasArts Entertainment Company\\JediKnight\\v1.0", "0.1");
     //stdStartup(&hs); // Moved
+
+    stdHttp_Startup();
 
     jkGob_Startup();
     jkRes_Startup(pHS);
@@ -449,6 +455,8 @@ void Main_Shutdown()
     }
     
     jkPlayer_ResetVars(); // Added
+
+    stdHttp_Shutdown(); // Added
 
     // Added
     Main_bDedicatedServer = 0;
